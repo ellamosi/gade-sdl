@@ -9,7 +9,7 @@ private package Audio.Resamplers is
 
    procedure Resample
      (Self   : in out Resampler;
-      Input  : Sample_Buffers.Bounded_Buffer; --  TODO: Rename generic package instance
+      Input  : Stereo_Sample_Buffer;
       Output : in out Circular_Float_Buffers.Circular_Buffer);
 
    procedure Set_Input_Frequency

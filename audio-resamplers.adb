@@ -15,7 +15,7 @@ package body Audio.Resamplers is
 
    procedure Resample
      (Self   : in out Resampler;
-      Input  : Sample_Buffers.Bounded_Buffer;
+      Input  : Stereo_Sample_Buffer;
       Output : in out Circular_Float_Buffers.Circular_Buffer)
    is
    begin

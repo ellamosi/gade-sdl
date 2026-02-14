@@ -19,14 +19,15 @@ package Audio is private
 
    function To_Float (S : Sample) return Float with Inline;
 
-   package Sample_Buffers is new Buffers.Bounded (Gade.Audio_Buffer.Stereo_Sample);
+   package Stereo_Sample_Buffers is new Buffers.Bounded (Gade.Audio_Buffer.Stereo_Sample);
+   subtype Stereo_Sample_Buffer is Stereo_Sample_Buffers.Bounded_Buffer;
 
    package Bounded_Float_Buffers is new Buffers.Bounded (Float_Frame);
    package Circular_Float_Buffers is new Buffers.Circular (Float_Frame);
    --  package Protected_Circular_Float_Buffers is new Buffers.Protected_Blocking_Queue (Float_Frame);
 
    subtype Video_Frame_Sample_Buffer is
-     Sample_Buffers.Bounded_Buffer (Gade.Audio_Buffer.Maximum_Samples);
+     Stereo_Sample_Buffer (Gade.Audio_Buffer.Maximum_Samples);
 
    function Data_Access (Buff : access Video_Frame_Sample_Buffer)
                          return Gade.Audio_Buffer.Audio_Buffer_Access;
