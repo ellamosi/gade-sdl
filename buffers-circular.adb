@@ -16,6 +16,11 @@ package body Buffers.Circular is
       if Self.Read_Index > Self.Size then Self.Read_Index := 1; end if;
    end Pop;
 
+   function Peek (Self : Circular_Buffer) return Element_Type is
+   begin
+      return Self.Data (Self.Read_Index);
+   end Peek;
+
    function Length (Self : Circular_Buffer) return Natural is
    begin
       return Self.Count;

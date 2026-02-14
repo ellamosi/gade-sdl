@@ -1,6 +1,5 @@
 with Ada.Text_IO;
 
-with GNAT.Traceback;
 with GNAT.Traceback.Symbolic;
 
 with Gade.Interfaces; use Gade.Interfaces;
@@ -103,27 +102,11 @@ begin
       end if;
    end loop;
 
-   --  TODO: Reexamine, finalizes get called twice, but task keeps these in
-   --  context otherwise
-   Finalize (Window);
-   --  Finalize (Audio_IO);
-   --  Finalize (Input);
-   Finalize (G);
+   --  Local resources are controlled and will get automatically finalized
+
+   Shutdown (Audio_IO);
+   Shutdown (Window);
    SDL.Finalise;
---  exception
---     when GNAT.Command_Line.Invalid_Switch =>
---        Ada.Text_IO.Put_Line ("Invalid_Switch");
---        Ada.Command_Line.Set_Exit_Status (1);
---     when GNAT.Command_Line.Invalid_Parameter =>
---        Ada.Text_IO.Put_Line ("Invalid_Parameter");
---        Ada.Text_IO.Put_Line (Get_Argument (False, Command_Line_Parser));
---        Ada.Text_IO.Put_Line (Parameter (Command_Line_Parser));
---        Ada.Text_IO.Put_Line (Full_Switch (Command_Line_Parser));
---        Ada.Command_Line.Set_Exit_Status (1);
---     when GNAT.Command_Line.Exit_From_Command_Line =>
---        --  Ada.Text_IO.Put_Line ("Exit_From_Command_Line");
---        Ada.Command_Line.Set_Exit_Status (1);
---  --  This seems to actually hide the exceptions, got to test it further
 exception
    when E : others =>
       Ada.Text_IO.Put_Line ("Main Thread Exception");

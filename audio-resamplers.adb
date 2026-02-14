@@ -16,10 +16,9 @@ package body Audio.Resamplers is
    procedure Resample
      (Self   : in out Resampler;
       Input  : Sample_Buffers.Bounded_Buffer;
-      Output : in out Float_Appendables.Appendable'Class)
+      Output : in out Circular_Float_Buffers.Circular_Buffer)
    is
    begin
-      --  Output.Clear;
       for Frame of Input loop
          Resample (Self, Frame, Output);
       end loop;
@@ -28,7 +27,7 @@ package body Audio.Resamplers is
    procedure Resample
      (Self   : in out Resampler;
       Frame  : Stereo_Sample;
-      Output : in out Float_Appendables.Appendable'Class)
+      Output : in out Circular_Float_Buffers.Circular_Buffer)
    is
       Mu         : Float renames Self.Fraction;
       F          : Frame_History renames Self.History;
@@ -39,13 +38,13 @@ package body Audio.Resamplers is
       F (2) := F (3);
       F (3) := (To_Float (Frame.Left), To_Float (Frame.Right));
 
-      while Mu <= 1.0 loop
+      while Mu <= 1.0 and then Output.Available > 0 loop
          A := F (3) - F (2) - F (0) + F (1);
          B := F (0) - F (1) - A;
          C := F (2) - F (0);
          D := F (1);
 
-         Output.Append (A * Mu * Mu * Mu + B * Mu * Mu + C * Mu + D);
+         Output.Push (A * Mu * Mu * Mu + B * Mu * Mu + C * Mu + D);
          Mu := Mu + Self.Ratio;
       end loop;
 

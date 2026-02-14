@@ -7,6 +7,8 @@ with SDL.Timers; use SDL.Timers;
 
 package Gade_Runner is
 
+   Max_Frame_Rendering_Rate : constant := 60;
+
    type Instance is limited private;
 
    procedure Create (Runner : out Instance);
@@ -18,7 +20,6 @@ package Gade_Runner is
 
 private
 
-   Max_Frame_Rendering_Rate : constant := 60;
    Min_Frame_Duration : constant Milliseconds :=
      1000 / Max_Frame_Rendering_Rate;
 

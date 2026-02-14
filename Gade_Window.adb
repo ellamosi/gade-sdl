@@ -7,7 +7,7 @@ with SDL.Video.Renderers.Makers;
 with SDL.Video.Textures.Makers;
 with SDL.Video.Pixel_Formats;
 with SDL.Video.Pixels;
-
+with SDL.Log; use SDL.Log;
 package body Gade_Window is
 
    procedure Create (Window : out Gade_Window_Type) is
@@ -33,6 +33,8 @@ package body Gade_Window is
          Format   => SDL.Video.Pixel_Formats.Pixel_Format_RGB_888,
          Kind     => SDL.Video.Textures.Streaming,
          Size     => (Display_Width, Display_Height));
+      Window.Is_Created := True;
+      Window.Is_Shutdown := False;
    end Create;
 
    procedure SDL_Texture_Lock is
@@ -75,15 +77,23 @@ package body Gade_Window is
       Window.Window.Set_Title ("Gade (" & FPS_Str_Sliced & " fps)");
    end Set_FPS;
 
-   procedure Report (Window : in out Gade_Window_Type; Text : String) is
-   begin
-      Window.Window.Set_Title ("Gade (" & Text & ")");
-   end Report;
-
    overriding
    procedure Finalize (Window : in out Gade_Window_Type) is
    begin
-      SDL.Video.Windows.Finalize (Window.Window);
+      Shutdown (Window);
    end Finalize;
+
+   procedure Shutdown (Window : in out Gade_Window_Type) is
+   begin
+      if not Window.Is_Created or else Window.Is_Shutdown then
+         return;
+      end if;
+
+      Put_Debug ("Window Finalize");
+      SDL.Video.Textures.Finalize (Window.Texture);
+      SDL.Video.Renderers.Finalize (Window.Renderer);
+      SDL.Video.Windows.Finalize (Window.Window);
+      Window.Is_Shutdown := True;
+   end Shutdown;
 
 end Gade_Window;

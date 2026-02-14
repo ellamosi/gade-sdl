@@ -22,7 +22,6 @@ package body Buffers.Bounded is
       return Length (Self) = 0;
    end Is_Empty;
 
-   overriding
    procedure Append (Self : in out Bounded_Buffer; E : Element_Type) is
    begin
       Self.Slice (Upper) := Self.Slice (Upper) + 1;
@@ -67,7 +66,7 @@ package body Buffers.Bounded is
 
    function Has_Element (Position : Cursor) return Boolean is
    begin
-      return Position.Position <= Position.Last;
+      return Position.Index <= Position.Last;
    end Has_Element;
 
    overriding
@@ -79,7 +78,7 @@ package body Buffers.Bounded is
    overriding
    function Next (Object : Iterator; Position : Cursor) return Cursor is
    begin
-      return (Object.Last, Position.Position + 1);
+      return (Object.Last, Position.Index + 1);
    end Next;
 
    function Iterate (Container : Bounded_Buffer)
@@ -99,7 +98,7 @@ package body Buffers.Bounded is
                                 Position  : Cursor)
                                 return Constant_Reference_Type is
    begin
-      return Constant_Reference (Container, Position.Position);
+      return Constant_Reference (Container, Position.Index);
    end Constant_Reference;
 
    function Reference (Container : aliased in out Bounded_Buffer;
@@ -113,7 +112,7 @@ package body Buffers.Bounded is
                        Position  : in Cursor)
                        return Reference_Type is
    begin
-      return Reference (Container, Position.Position);
+      return Reference (Container, Position.Index);
    end Reference;
 
 end Buffers.Bounded;

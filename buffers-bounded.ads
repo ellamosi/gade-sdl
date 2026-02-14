@@ -3,16 +3,13 @@ with System;
 
 generic
    type Element_Type is private;
-   with package Appendables is new Appendable_Buffers (Element_Type);
 package Buffers.Bounded is
-   use Appendables;
 
    type Data_Container is array (Positive range <>) of aliased Element_Type;
 
    type Data_Container_Access is access all Data_Container;
 
-   --  TODO: Rename Size to Capacity in containers?
-   type Bounded_Buffer (Size : Positive) is new Appendable with private with
+   type Bounded_Buffer (Capacity : Positive) is tagged private with
      Default_Iterator  => Iterate,
      Iterator_Element  => Element_Type,
      Constant_Indexing => Constant_Reference,
@@ -20,28 +17,22 @@ package Buffers.Bounded is
      Default_Initial_Condition =>
        Length (Bounded_Buffer) = 0;
 
-   procedure Clear (Self : out Bounded_Buffer)
-     with Inline;
+   procedure Clear (Self : out Bounded_Buffer);
 
-   procedure Set_Length (Self : in out Bounded_Buffer; Count : Natural)
-     with Inline;
+   procedure Set_Length (Self : in out Bounded_Buffer; Count : Natural);
 
-   function Length (Self : Bounded_Buffer) return Natural
-     with Inline;
+   function Length (Self : Bounded_Buffer) return Natural;
 
-   function Is_Empty (Self : Bounded_Buffer) return Boolean
-     with Inline;
+   function Is_Empty (Self : Bounded_Buffer) return Boolean;
 
-   overriding
    procedure Append (Self : in out Bounded_Buffer; E : Element_Type)
      with
-       Pre  => Length (Self) <= Self.Size - 1 or else raise Constraint_Error,
-       Post => Length (Self)'Old + 1 = Length (Self) and then Self.Size >= Length (Self),
+       Pre  => Length (Self) <= Self.Capacity - 1 or else raise Constraint_Error,
+       Post => Length (Self)'Old + 1 = Length (Self) and then Self.Capacity >= Length (Self),
        Inline;
 
    function Element (Self : Bounded_Buffer; Index : Positive)
-                     return Element_Type
-     with Inline;
+                     return Element_Type;
 
    function Data_Access (Self : in out Bounded_Buffer)
                          return Data_Container_Access;
@@ -98,14 +89,14 @@ private
 
    type Bounds is array (Bound) of Natural;
 
-   type Bounded_Buffer (Size : Positive) is new Appendable with record
-      Data  : aliased Data_Container (1 .. Size);
+   type Bounded_Buffer (Capacity : Positive) is tagged record
+      Data  : aliased Data_Container (1 .. Capacity);
       Slice : aliased Bounds := (1, 0);
    end record;
 
    type Cursor is record
-      Last     : Positive;
-      Position : Positive; --  TODO: Rename to Index
+      Last  : Positive;
+      Index : Positive;
    end record;
 
    type Iterator is new Iterators.Forward_Iterator with record

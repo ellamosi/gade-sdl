@@ -34,6 +34,11 @@ package body Command_Line is
       Command_Line.Uncapped_FPS := Uncapped_FPS;
       Command_Line.Log_Priority := Parse_Log_Priority (Log_Priority_Str.all);
       Command_Line.ROM_Filename := To_Unbounded_String (Get_Argument);
+      GNAT.Strings.Free (Log_Priority_Str);
+   exception
+      when others =>
+         GNAT.Strings.Free (Log_Priority_Str);
+         raise;
    end Parse;
 
    function Parse_Log_Priority (Priority : String) return SDL.Log.Priorities is

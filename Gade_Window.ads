@@ -12,6 +12,8 @@ package Gade_Window is
 
    procedure Create (Window : out Gade_Window_Type);
 
+   procedure Shutdown (Window : in out Gade_Window_Type);
+
    generic
       with procedure Generate_Frame (Buffer : RGB32_Display_Buffer_Access);
    procedure Render_Frame (Window : in out Gade_Window_Type);
@@ -19,8 +21,6 @@ package Gade_Window is
    procedure Set_FPS
      (Window : in out Gade_Window_Type;
       FPS    : Float);
-
-   procedure Report (Window : in out Gade_Window_Type; Text : String);
 
    overriding
    procedure Finalize (Window : in out Gade_Window_Type);
@@ -31,6 +31,8 @@ private
       Window   : SDL.Video.Windows.Window;
       Texture  : SDL.Video.Textures.Texture;
       Renderer : SDL.Video.Renderers.Renderer;
+      Is_Created  : Boolean := False;
+      Is_Shutdown : Boolean := False;
    end record;
 
 end Gade_Window;
