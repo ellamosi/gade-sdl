@@ -9,8 +9,18 @@ with SDL.Video.Pixel_Formats;
 with SDL.Video.Pixels;
 with SDL.Log; use SDL.Log;
 package body Gade_Window is
+   Cocoa_Renderer_Driver : constant Positive := 1;
+   --  Preferred renderer driver on macOS for sharper scaling in this setup.
 
    procedure Create (Window : out Gade_Window_Type) is
+      procedure Create_Default_Renderer;
+      procedure Create_Default_Renderer is
+      begin
+         SDL.Video.Renderers.Makers.Create
+           (Rend   => Window.Renderer,
+            Window => Window.Window,
+            Flags  => SDL.Video.Renderers.Accelerated);
+      end Create_Default_Renderer;
    begin
       SDL.Video.Windows.Makers.Create
         (Win    => Window.Window,
@@ -20,12 +30,21 @@ package body Gade_Window is
          Width  => Display_Width * 2,
          Height => Display_Height * 2);
 
-      SDL.Video.Renderers.Makers.Create
-        (Rend   => Window.Renderer,
-         Window => Window.Window,
-         --  TODO: use default driver if Cocoa is not present (for better multiplatform support)
-         Driver => 1, -- Cocoa. Using the default driver results in blurry scaling
-         Flags  => SDL.Video.Renderers.Accelerated);
+      begin
+         SDL.Video.Renderers.Makers.Create
+           (Rend   => Window.Renderer,
+            Window => Window.Window,
+            Driver => Cocoa_Renderer_Driver,
+            --  Cocoa: preferred on macOS as it avoids blurry scaling.
+            Flags  => SDL.Video.Renderers.Accelerated);
+
+         --  Validate renderer creation; Maker.Create does not raise on failure.
+         SDL.Video.Renderers.Clear (Window.Renderer);
+      exception
+         when SDL.Video.Renderers.Renderer_Error =>
+            SDL.Video.Renderers.Finalize (Window.Renderer);
+            Create_Default_Renderer;
+      end;
 
       SDL.Video.Textures.Makers.Create
         (Tex      => Window.Texture,
