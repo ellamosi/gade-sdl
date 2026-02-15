@@ -9,7 +9,7 @@ package body Audio.Callback is
    is
       Result : constant Callback_Context_Access := new Callback_Context;
    begin
-      Result.Ring_Bis := Ring;
+      Result.Output_Ring := Ring;
       return Result;
    end Create;
 
@@ -48,11 +48,11 @@ package body Audio.Callback is
    function Level (Context : Callback_Context) return Float is
       Length : Natural;
    begin
-      if Context.Ring_Bis = null then
+      if Context.Output_Ring = null then
          return 0.5;
       end if;
 
-      Length := Context.Ring_Bis.Length;
+      Length := Context.Output_Ring.Length;
       return
         (if Length <= Context.Margin_Low then 0.0
          elsif Length >= Context.Margin_High then 1.0
@@ -70,8 +70,8 @@ package body Audio.Callback is
       Cursor : Cursor_Ring_Frame_Buffers.Read_Cursor;
       Buffer_Index : Positive := Buffer'First;
    begin
-      if Context.Ring_Bis /= null then
-         Context.Ring_Bis.Begin_Read (Cursor);
+      if Context.Output_Ring /= null then
+         Context.Output_Ring.Begin_Read (Cursor);
 
          while Cursor.Has_Element and Buffer_Index <= Buffer'Last loop
             Cursor.Pop (Buffer (Buffer_Index));

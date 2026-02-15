@@ -27,7 +27,7 @@ private
    Default_Output_Frequency : constant Positive := 48_000;
 
    type Callback_Context is limited new Devices.User_Data with record
-      Ring_Bis : Ring_Buffer_Access;
+      Output_Ring      : Ring_Buffer_Access;
       Margin_Frames    : Positive := 1;
       Margin_Low       : Natural := 0;
       Margin_High      : Positive := 1;
