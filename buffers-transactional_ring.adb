@@ -1,4 +1,4 @@
-package body Buffers.Protected_Cursor_Ring is
+package body Buffers.Transactional_Ring is
 
    function Has_Element (C : Cursor) return Boolean is
    begin
@@ -6,7 +6,7 @@ package body Buffers.Protected_Cursor_Ring is
    end Has_Element;
 
    procedure Begin_Write
-     (Self : aliased in out Protected_Circular_Buffer;
+     (Self : aliased in out Transactional_Ring_Buffer;
       C    : out Write_Cursor'Class)
    is
    begin
@@ -25,7 +25,7 @@ package body Buffers.Protected_Cursor_Ring is
    end Commit_Write;
 
    procedure Begin_Read
-     (Self : aliased in out Protected_Circular_Buffer;
+     (Self : aliased in out Transactional_Ring_Buffer;
       C    : out Read_Cursor'Class)
    is
    begin
@@ -43,25 +43,10 @@ package body Buffers.Protected_Cursor_Ring is
       C.Buffer.Committed.Commit (C);
    end Commit_Read;
 
---     function Peek (Self : Protected_Circular_Buffer) return Element_Type is
---     begin
---        return Self.Data (Self.Read_Index);
---     end Peek;
---
-   function Length (Self : Protected_Circular_Buffer) return Natural is
+   function Length (Self : Transactional_Ring_Buffer) return Natural is
    begin
       return Self.Committed.Length;
    end Length;
-
---     function Is_Empty (Self : Protected_Circular_Buffer) return Boolean is
---     begin
---        return Self.Length = 0;
---     end Is_Empty;
---
---     function Available (Self : Protected_Circular_Buffer) return Natural is
---     begin
---        return Self.Size - Self.Length;
---     end Available;
 
    procedure Next (C : in out Cursor) is
    begin
@@ -71,7 +56,7 @@ package body Buffers.Protected_Cursor_Ring is
    end Next;
 
    protected body Committed_Context is
-      procedure Read (Buffer : Protected_Circular_Buffer_Access;
+      procedure Read (Buffer : Transactional_Ring_Buffer_Access;
                       C      : out Read_Cursor'Class)
       is
       begin
@@ -87,7 +72,7 @@ package body Buffers.Protected_Cursor_Ring is
          Count := Count - (C.Total - C.Remaining);
       end Commit;
 
-      procedure Write (Buffer : Protected_Circular_Buffer_Access;
+      procedure Write (Buffer : Transactional_Ring_Buffer_Access;
                        C      : out Write_Cursor'Class)
       is
          Total : constant Natural := Size - Count;
@@ -110,4 +95,4 @@ package body Buffers.Protected_Cursor_Ring is
       end Length;
    end Committed_Context;
 
-end Buffers.Protected_Cursor_Ring;
+end Buffers.Transactional_Ring;

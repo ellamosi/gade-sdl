@@ -1,7 +1,7 @@
 package body Buffers.Protected_Blocking_Queue is
 
    procedure Push_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : Element_Type)
    is
    begin
@@ -9,7 +9,7 @@ package body Buffers.Protected_Blocking_Queue is
    end Push_Blocking;
 
    procedure Push_Non_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : Element_Type)
    is
    begin
@@ -17,7 +17,7 @@ package body Buffers.Protected_Blocking_Queue is
    end Push_Non_Blocking;
 
    procedure Pop_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : out Element_Type)
    is
    begin
@@ -25,34 +25,34 @@ package body Buffers.Protected_Blocking_Queue is
    end Pop_Blocking;
 
    procedure Pop_Non_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : out Element_Type)
    is
    begin
       Self.Protected_Buffer.Pop_Non_Blocking (E);
    end Pop_Non_Blocking;
 
-   function Peek (Self : Protected_Circular_Buffer) return Element_Type is
+   function Peek (Self : Protected_Blocking_Queue) return Element_Type is
    begin
       return Self.Protected_Buffer.Peek;
    end Peek;
 
-   function Length (Self : Protected_Circular_Buffer) return Natural is
+   function Length (Self : Protected_Blocking_Queue) return Natural is
    begin
       return Self.Protected_Buffer.Length;
    end Length;
 
-   function Is_Empty (Self : Protected_Circular_Buffer) return Boolean is
+   function Is_Empty (Self : Protected_Blocking_Queue) return Boolean is
    begin
       return Self.Protected_Buffer.Is_Empty;
    end Is_Empty;
 
-   function Available (Self : Protected_Circular_Buffer) return Natural is
+   function Available (Self : Protected_Blocking_Queue) return Natural is
    begin
       return Self.Protected_Buffer.Available;
    end Available;
 
-   protected body Protected_Circular_Buffer_Impl is
+   protected body Protected_Blocking_Queue_Impl is
 
       entry Push_Blocking (E : Element_Type) when Buffer.Available > 0 is
       begin
@@ -94,6 +94,6 @@ package body Buffers.Protected_Blocking_Queue is
          return Buffer.Available;
       end Available;
 
-   end Protected_Circular_Buffer_Impl;
+   end Protected_Blocking_Queue_Impl;
 
 end Buffers.Protected_Blocking_Queue;

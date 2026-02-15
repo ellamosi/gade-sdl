@@ -12,7 +12,7 @@
 - Expected win: lower buffering/latency without architectural change.
 
 ## 3. Replace pointer-block queues with sample-level source ring (SPSC)
-- Add `Source_Sample_Ring : Protected_Cursor_Ring (Float_Frame or Stereo_Sample)`.
+- Add `Source_Sample_Ring : Transactional_Ring_Buffer (Float_Frame or Stereo_Sample)`.
 - Producer writes generated samples directly into source ring.
 - Remove `Free_Queue`, `Busy_Queue`, `Frame_Buffers`, `Dummy_Buffer` usage from hot path.
 - Keep existing output ring feeding callback unchanged initially.

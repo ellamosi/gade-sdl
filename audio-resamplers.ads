@@ -10,7 +10,7 @@ private package Audio.Resamplers is
    procedure Resample
      (Self   : in out Resampler;
       Input  : Stereo_Sample_Buffer;
-      Output : in out Circular_Float_Buffers.Circular_Buffer);
+      Output : in out Circular_Float_Buffers.Ring_Buffer);
 
    procedure Set_Input_Frequency
      (Self            : in out Resampler;
@@ -31,6 +31,6 @@ private
    procedure Resample
      (Self   : in out Resampler;
       Frame  : Stereo_Sample;
-      Output : in out Circular_Float_Buffers.Circular_Buffer);
+      Output : in out Circular_Float_Buffers.Ring_Buffer);
 
 end Audio.Resamplers;

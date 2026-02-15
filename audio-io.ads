@@ -3,7 +3,6 @@ private with Audio.Callbacks;
 with SDL.Audio.Sample_Formats;
 
 with Ada.Finalization;
-with System;
 
 package Audio.IO is
 
@@ -52,8 +51,8 @@ private
       Device : Devices.Device;
       Spec   : Obtained_Spec;
 
-      Source_Ring : aliased Cursor_Ring_Stereo_Samples.Protected_Circular_Buffer (Source_Ring_Capacity);
-      Ring        : aliased Cursor_Ring_Frame_Buffers.Protected_Circular_Buffer (Ring_Capacity);
+      Source_Ring : aliased Cursor_Ring_Stereo_Samples.Transactional_Ring_Buffer (Source_Ring_Capacity);
+      Ring        : aliased Cursor_Ring_Frame_Buffers.Transactional_Ring_Buffer (Ring_Capacity);
 
       Resampler : Resampling_Task;
 
@@ -64,8 +63,5 @@ private
 
    Sample_Format : constant SDL.Audio.Sample_Formats.Sample_Format :=
      SDL.Audio.Sample_Formats.Sample_Format_F32LSB;
-
-   Frame_Size_Bytes : constant Natural :=
-     Natural (Sample_Format.Bit_Size) * Desired_Channel_Count / System.Storage_Unit;
 
 end Audio.IO;

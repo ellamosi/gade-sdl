@@ -26,7 +26,6 @@ package body Audio.IO is
    private
       Producer_Samples : Long_Long_Integer := 0;
       Produced_Blocks  : Natural := 0;
-      Dropped_Blocks   : Natural := 0;
 
       Source_Ring_Seen : Boolean := False;
       Source_Ring_Min  : Natural := 0;
@@ -42,7 +41,6 @@ package body Audio.IO is
       begin
          Producer_Samples := 0;
          Produced_Blocks  := 0;
-         Dropped_Blocks   := 0;
          Source_Ring_Seen := False;
          Output_Ring_Seen := False;
       end Reset;
@@ -85,8 +83,7 @@ package body Audio.IO is
       begin
          Put_Info
            ("Audio Stats: samples=" & Producer_Samples'Img &
-              " blocks=" & Produced_Blocks'Img &
-              " dropped=" & Dropped_Blocks'Img);
+              " blocks=" & Produced_Blocks'Img);
 
          if Source_Ring_Seen then
             Put_Info
@@ -251,7 +248,7 @@ package body Audio.IO is
                                   Audio.Callbacks.Output_Frequency (CC.all)) /
                              (Base_Input_Frequency * (1.0 - Max_Delta))) + 8,
                           1));
-                  Resampled : Circular_Float_Buffers.Circular_Buffer
+                  Resampled : Circular_Float_Buffers.Ring_Buffer
                     (Resampled_Capacity);
                   Frame  : Float_Frame;
                   Cursor : Cursor_Ring_Frame_Buffers.Write_Cursor;

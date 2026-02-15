@@ -1,42 +1,42 @@
-private with Buffers.Circular;
+private with Buffers.Ring;
 
 generic
    type Element_Type is private;
 package Buffers.Protected_Blocking_Queue is
 
-   type Protected_Circular_Buffer (Size : Positive) is tagged limited private;
+   type Protected_Blocking_Queue (Size : Positive) is tagged limited private;
 
    procedure Push_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : Element_Type);
 
    procedure Push_Non_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : Element_Type);
 
    procedure Pop_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : out Element_Type);
 
    procedure Pop_Non_Blocking
-     (Self : in out Protected_Circular_Buffer;
+     (Self : in out Protected_Blocking_Queue;
       E    : out Element_Type);
 
-   function Peek (Self : Protected_Circular_Buffer)
+   function Peek (Self : Protected_Blocking_Queue)
                   return Element_Type;
 
-   function Length (Self : Protected_Circular_Buffer) return Natural;
+   function Length (Self : Protected_Blocking_Queue) return Natural;
 
-   function Is_Empty (Self : Protected_Circular_Buffer)
+   function Is_Empty (Self : Protected_Blocking_Queue)
                       return Boolean;
 
-   function Available (Self : Protected_Circular_Buffer) return Natural;
+   function Available (Self : Protected_Blocking_Queue) return Natural;
 
 private
 
-   package Circular_Buffers is new Buffers.Circular (Element_Type);
+   package Circular_Buffers is new Buffers.Ring (Element_Type);
 
-   protected type Protected_Circular_Buffer_Impl (Size : Positive) is
+   protected type Protected_Blocking_Queue_Impl (Size : Positive) is
 
       entry Push_Blocking (E : Element_Type);
 
@@ -55,11 +55,11 @@ private
       function Available return Natural;
 
    private
-      Buffer : Circular_Buffers.Circular_Buffer (Size);
-   end Protected_Circular_Buffer_Impl;
+      Buffer : Circular_Buffers.Ring_Buffer (Size);
+   end Protected_Blocking_Queue_Impl;
 
-   type Protected_Circular_Buffer (Size : Positive) is tagged limited record
-      Protected_Buffer : Protected_Circular_Buffer_Impl (Size);
+   type Protected_Blocking_Queue (Size : Positive) is tagged limited record
+      Protected_Buffer : Protected_Blocking_Queue_Impl (Size);
    end record;
 
 end Buffers.Protected_Blocking_Queue;
