@@ -1,7 +1,6 @@
 with Gade.Audio_Buffer; use Gade.Audio_Buffer;
 
 package body Runtime.Main_Loop is
-   --  TODO: Possibly rename to Renderer
 
    procedure Create (Runner : out Instance) is
    begin
