@@ -9,6 +9,8 @@ package Buffers.Bounded is
 
    type Data_Container_Access is access all Data_Container;
 
+   --  Fixed-capacity contiguous buffer with logical length metadata.
+   --  Supports random indexing and safe iteration over initialized elements.
    type Bounded_Buffer (Capacity : Positive) is tagged private with
      Default_Iterator  => Iterate,
      Iterator_Element  => Element_Type,

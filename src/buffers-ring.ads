@@ -2,6 +2,7 @@ generic
    type Element_Type is private;
 package Buffers.Ring is
 
+   --  Fixed-capacity FIFO ring buffer with immediate push/pop operations.
    type Ring_Buffer (Size : Positive) is tagged private;
 
    procedure Push (Self : in out Ring_Buffer; E : Element_Type)

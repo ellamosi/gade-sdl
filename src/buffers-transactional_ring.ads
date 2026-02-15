@@ -2,6 +2,8 @@ generic
    type Element_Type is private;
 package Buffers.Transactional_Ring is
 
+   --  Fixed-capacity FIFO ring with cursor-based begin/commit transactions
+   --  for batched producer/consumer access.
    type Transactional_Ring_Buffer (Size : Positive) is tagged limited private;
 
    type Cursor is tagged limited private;
