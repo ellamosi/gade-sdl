@@ -8,7 +8,7 @@ project Gade_SDL is
 
    for Object_Dir use "../obj/gade_sdl";
    for Exec_Dir use "../bin";
-   for Source_Dirs use (".");
+   for Source_Dirs use ("src");
 
    SDL_MODE : SDLAda.Mode_Type := external ("SDL_MODE");
    SDL_PLATFORM : SDLAda.Platform_Type := external ("SDL_PLATFORM");
