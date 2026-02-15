@@ -1,5 +1,4 @@
 with Gade.Audio_Buffer; use Gade.Audio_Buffer;
-with SDL.Log; use SDL.Log;
 
 package body Gade_Runner is
    --  TODO: Possibly rename to Renderer
@@ -57,7 +56,7 @@ package body Gade_Runner is
       Video_Buffer : RGB32_Display_Buffer_Access;
       Audio_IO     : in out Audio.IO.Instance)
    is
-      Requested_Samples : constant Natural := Samples_Frame;
+      Requested_Samples : constant Natural := Producer_Chunk_Samples;
       Actual_Samples    : Natural; -- Per frame
       Frame_Finished    : Boolean := False;
 
@@ -72,8 +71,6 @@ package body Gade_Runner is
                   Video_Buffer,
                   Audio_Buffer,
                   Frame_Finished);
-
-         if not Frame_Finished then Put_Debug ("Unfinished Frame"); end if;
 
          Actual_Samples := Actual_Samples / 4;
          Count := Actual_Samples;

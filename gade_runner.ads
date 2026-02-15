@@ -8,6 +8,7 @@ with SDL.Timers; use SDL.Timers;
 package Gade_Runner is
 
    Max_Frame_Rendering_Rate : constant := 60;
+   Producer_Chunk_Samples   : constant Natural := 2_048;
 
    type Instance is limited private;
 

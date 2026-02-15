@@ -22,7 +22,7 @@ package body Audio is
       return Float (S) / Float (Sample'Last);
    end To_Float;
 
-   function Data_Access (Buff : access Video_Frame_Sample_Buffer)
+   function Data_Access (Buff : access Stereo_Sample_Buffer)
                          return Audio_Buffer_Access
    is
       type Stereo_Sample_Access is access all Stereo_Sample;

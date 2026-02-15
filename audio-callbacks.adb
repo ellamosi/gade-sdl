@@ -3,17 +3,10 @@ with Ada.Exceptions; use Ada.Exceptions;
 
 package body Audio.Callbacks is
 
-   Nominal_Frame_Rate : constant Float := 60.0;
-   Nominal_Input_Frequency : constant Float :=
-     Float (Block_Samples) * Nominal_Frame_Rate;
-
    function Create
-     (Ring       : Ring_Buffer_Access;
-      Free_Queue : Free_Frame_Buffer_Access;
-      Busy_Queue : Busy_Frame_Buffer_Access)
+     (Ring : Ring_Buffer_Access)
       return Callback_Context_Access
    is
-      pragma Unreferenced (Free_Queue, Busy_Queue);
       Result : constant Callback_Context_Access := new Callback_Context;
    begin
       Result.Ring_Bis := Ring;
@@ -26,8 +19,6 @@ package body Audio.Callbacks is
    is
       Callback_Samples : constant Natural := Natural (Spec.Samples);
       Frequency        : constant Integer := Integer (Spec.Frequency);
-
-      Min_Block_Length : Natural;
    begin
       if Frequency > 0 then
          Context.Output_Frequency := Positive (Frequency);
@@ -35,17 +26,10 @@ package body Audio.Callbacks is
          Context.Output_Frequency := Default_Output_Frequency;
       end if;
 
-      Context.Margin_Low  := Natural'Max (Callback_Samples, 1);
+      Context.Margin_Low  := Natural'Max (Callback_Samples * 2, 1);
       Context.Margin_High := Positive (Natural'Max (Context.Margin_Low + 1,
-                                                   Callback_Samples * 3));
+                                                   Callback_Samples * 6));
       Context.Margin_Frames := Positive (Context.Margin_High - Context.Margin_Low);
-
-      Min_Block_Length :=
-        Natural
-          (Float (Block_Samples * Context.Output_Frequency) /
-           (Nominal_Input_Frequency * (1.0 + Max_Delta)));
-      Context.Min_Resampled_Block_Length :=
-        Positive (Natural'Max (Min_Block_Length, 1));
    end Set_Spec;
 
    function User_Data (Context : aliased in out Callback_Context)
@@ -110,10 +94,6 @@ package body Audio.Callbacks is
    begin
       Buffer := (others => (0.0, 0.0));
    end Write_Silence;
-
-   function Min_Resampled_Block_Length (Context : Callback_Context)
-                                        return Positive
-   is (Context.Min_Resampled_Block_Length);
 
    function Output_Frequency (Context : Callback_Context) return Positive
    is (Context.Output_Frequency);

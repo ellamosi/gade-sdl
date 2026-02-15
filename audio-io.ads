@@ -37,31 +37,23 @@ private
    --  two. Bigger values reduce the chances of buffer underruns (which would
    --  cause short audio interruptions) but increase latency.
 
-   type Frame_Buffer_Array is array (1 .. Frame_Buffer_Count)
-     of aliased Video_Frame_Sample_Buffer;
-
-   Queue_Capacity : constant Positive := Frame_Buffer_Count;
-   Ring_Capacity  : constant Positive := Desired_Callback_Frames * 8;
+   Source_Ring_Capacity : constant Positive := Desired_Callback_Frames * 8;
+   Ring_Capacity        : constant Positive := Desired_Callback_Frames * 8;
 
    task type Resampling_Task is
       entry Start
-        (CC         : Callback_Context_Access;
-         Ring       : Ring_Buffer_Access;
-         Free_Queue : Free_Frame_Buffer_Access;
-         Busy_Queue : Busy_Frame_Buffer_Access);
+        (CC          : Callback_Context_Access;
+         Source_Ring : Source_Ring_Buffer_Access;
+         Ring        : Ring_Buffer_Access);
+      entry Stop;
    end Resampling_Task;
 
    type Instance is new Ada.Finalization.Limited_Controlled with record
       Device : Devices.Device;
       Spec   : Obtained_Spec;
 
-      Dummy_Buffer  : aliased Video_Frame_Sample_Buffer;
-      Frame_Buffers : Frame_Buffer_Array;
-
-      Free_Queue : aliased Blocking_Frame_Buffers.Protected_Circular_Buffer (Queue_Capacity);
-      Busy_Queue : aliased Blocking_Frame_Buffers.Protected_Circular_Buffer (Queue_Capacity);
-
-      Ring : aliased Cursor_Ring_Frame_Buffers.Protected_Circular_Buffer (Ring_Capacity);
+      Source_Ring : aliased Cursor_Ring_Stereo_Samples.Protected_Circular_Buffer (Source_Ring_Capacity);
+      Ring        : aliased Cursor_Ring_Frame_Buffers.Protected_Circular_Buffer (Ring_Capacity);
 
       Resampler : Resampling_Task;
 

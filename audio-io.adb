@@ -16,6 +16,92 @@ package body Audio.IO is
      (Object => Callback_Context,
       Name   => Callback_Context_Access);
 
+   protected Stats is
+      procedure Reset;
+      procedure Add_Producer_Samples (Count : Natural);
+      procedure Increment_Produced_Block;
+      procedure Observe_Source_Ring (Ring_Length : Natural);
+      procedure Observe_Output_Ring (Ring_Length : Natural);
+      procedure Report;
+   private
+      Producer_Samples : Long_Long_Integer := 0;
+      Produced_Blocks  : Natural := 0;
+      Dropped_Blocks   : Natural := 0;
+
+      Source_Ring_Seen : Boolean := False;
+      Source_Ring_Min  : Natural := 0;
+      Source_Ring_Max  : Natural := 0;
+
+      Output_Ring_Seen : Boolean := False;
+      Output_Ring_Min  : Natural := 0;
+      Output_Ring_Max  : Natural := 0;
+   end Stats;
+
+   protected body Stats is
+      procedure Reset is
+      begin
+         Producer_Samples := 0;
+         Produced_Blocks  := 0;
+         Dropped_Blocks   := 0;
+         Source_Ring_Seen := False;
+         Output_Ring_Seen := False;
+      end Reset;
+
+      procedure Add_Producer_Samples (Count : Natural) is
+      begin
+         Producer_Samples := Producer_Samples + Long_Long_Integer (Count);
+      end Add_Producer_Samples;
+
+      procedure Increment_Produced_Block is
+      begin
+         Produced_Blocks := Produced_Blocks + 1;
+      end Increment_Produced_Block;
+
+      procedure Observe_Source_Ring (Ring_Length : Natural) is
+      begin
+         if not Source_Ring_Seen then
+            Source_Ring_Seen := True;
+            Source_Ring_Min := Ring_Length;
+            Source_Ring_Max := Ring_Length;
+         else
+            Source_Ring_Min := Natural'Min (Source_Ring_Min, Ring_Length);
+            Source_Ring_Max := Natural'Max (Source_Ring_Max, Ring_Length);
+         end if;
+      end Observe_Source_Ring;
+
+      procedure Observe_Output_Ring (Ring_Length : Natural) is
+      begin
+         if not Output_Ring_Seen then
+            Output_Ring_Seen := True;
+            Output_Ring_Min := Ring_Length;
+            Output_Ring_Max := Ring_Length;
+         else
+            Output_Ring_Min := Natural'Min (Output_Ring_Min, Ring_Length);
+            Output_Ring_Max := Natural'Max (Output_Ring_Max, Ring_Length);
+         end if;
+      end Observe_Output_Ring;
+
+      procedure Report is
+      begin
+         Put_Info
+           ("Audio Stats: samples=" & Producer_Samples'Img &
+              " blocks=" & Produced_Blocks'Img &
+              " dropped=" & Dropped_Blocks'Img);
+
+         if Source_Ring_Seen then
+            Put_Info
+              ("Audio Source Ring Stats: len[min,max]=" &
+                 Source_Ring_Min'Img & "," & Source_Ring_Max'Img);
+         end if;
+
+         if Output_Ring_Seen then
+            Put_Info
+              ("Audio Ring Stats: len[min,max]=" &
+                 Output_Ring_Min'Img & "," & Output_Ring_Max'Img);
+         end if;
+      end Report;
+   end Stats;
+
    Max_Delta : constant Float := 0.005;
 
    --  Simple PI controller that drives ring fill-level toward 0.5.
@@ -49,11 +135,10 @@ package body Audio.IO is
       Callback  : Audio_Callback;
       User_Data : User_Data_Access;
 
-      Min_Buffer_Count : Positive;
    begin
-      Self.Callback_Context := Create (Self.Ring'Unchecked_Access,
-                                       Self.Free_Queue'Unchecked_Access,
-                                       Self.Busy_Queue'Unchecked_Access);
+      Stats.Reset;
+
+      Self.Callback_Context := Create (Self.Ring'Unchecked_Access);
       Callback := Self.Callback_Context.Callback;
       User_Data := Self.Callback_Context.User_Data;
 
@@ -89,98 +174,112 @@ package body Audio.IO is
       Put_Debug ("Obtained - Size :" & Obtained.Size'Img);
 
       Self.Callback_Context.Set_Spec (Obtained);
-
-      Min_Buffer_Count :=
-        (Positive (Obtained.Samples) - 1) /
-          Min_Resampled_Block_Length (Self.Callback_Context.all) + 1;
-      Put_Debug ("Min_Buffer_Count :" & Min_Buffer_Count'Img);
-
-      for Frame_Buffer of Self.Frame_Buffers loop
-         Self.Free_Queue.Push_Non_Blocking (Frame_Buffer'Unchecked_Access);
-      end loop;
+      Stats.Observe_Source_Ring (Self.Source_Ring.Length);
 
       Self.Resampler.Start (Self.Callback_Context,
-                            Self.Ring'Unchecked_Access,
-                            Self.Free_Queue'Unchecked_Access,
-                            Self.Busy_Queue'Unchecked_Access);
+                            Self.Source_Ring'Unchecked_Access,
+                            Self.Ring'Unchecked_Access);
 
       Self.Device.Pause (False);
    end Create;
 
    task body Resampling_Task is
-      CC         : Callback_Context_Access;
-      Ring       : Ring_Buffer_Access;
-      Free_Queue : Free_Frame_Buffer_Access;
-      Busy_Queue : Busy_Frame_Buffer_Access;
-      Buffer     : Bounded_Buffer_Access;
+      CC          : Callback_Context_Access;
+      Source_Ring : Source_Ring_Buffer_Access;
+      Ring        : Ring_Buffer_Access;
 
       Resampler      : Audio.Resamplers.Resampler;
       Integral_Error : Float := 0.0;
    begin
       accept Start
-        (CC         : Callback_Context_Access;
-         Ring       : Ring_Buffer_Access;
-         Free_Queue : Free_Frame_Buffer_Access;
-         Busy_Queue : Busy_Frame_Buffer_Access)
+        (CC          : Callback_Context_Access;
+         Source_Ring : Source_Ring_Buffer_Access;
+         Ring        : Ring_Buffer_Access)
       do
-         Resampling_Task.CC         := CC;
-         Resampling_Task.Ring       := Ring;
-         Resampling_Task.Free_Queue := Free_Queue;
-         Resampling_Task.Busy_Queue := Busy_Queue;
+         Resampling_Task.CC := CC;
+         Resampling_Task.Source_Ring := Source_Ring;
+         Resampling_Task.Ring := Ring;
       end Start;
 
       Resampler.Reset
-        (Float (Gade.Audio_Buffer.Samples_Frame * Gade_Runner.Max_Frame_Rendering_Rate),
+        (Float (Gade.Audio_Buffer.Samples_Second / 4),
          Float (Audio.Callbacks.Output_Frequency (CC.all)));
 
       loop
-         Busy_Queue.Pop_Blocking (Buffer);
+         select
+            accept Stop;
+            exit;
+         else
+            null;
+         end select;
 
          declare
-            Fill                 : constant Float := Level (CC.all);
-            Error                : constant Float := Fill - 0.5;
-            Dynamic_Delta        : Float;
-            Dynamic_Frequency    : Float;
-            Base_Input_Frequency : constant Float :=
-              Float (Natural'Max (Buffer.Length, 1) * Gade_Runner.Max_Frame_Rendering_Rate);
-
-            Resampled_Capacity : constant Positive :=
-              Positive
-                (Natural'Max
-                   (Natural
-                      (Float
-                         (Buffer.Length *
-                            Audio.Callbacks.Output_Frequency (CC.all)) /
-                       (Base_Input_Frequency * (1.0 - Max_Delta))) + 8,
-                    1));
-            Resampled : Circular_Float_Buffers.Circular_Buffer
-              (Resampled_Capacity);
-            Frame : Float_Frame;
-            Cursor : Cursor_Ring_Frame_Buffers.Write_Cursor;
+            Source_Cursor : Cursor_Ring_Stereo_Samples.Read_Cursor;
+            Input_Block   : Stereo_Sample_Buffer (Gade_Runner.Producer_Chunk_Samples);
+            Input_Count   : Natural := 0;
+            Sample        : Stereo_Sample;
          begin
-            Integral_Error := Clamp (Integral_Error + Error,
-                                     -Integral_Limit,
-                                     Integral_Limit);
-
-            Dynamic_Delta := Clamp (Error * Proportional_Gain +
-                                    Integral_Error * Integral_Gain,
-                                    -Max_Delta,
-                                    Max_Delta);
-            Dynamic_Frequency :=
-              Base_Input_Frequency * (1.0 + Dynamic_Delta);
-
-            Resampler.Set_Input_Frequency (Dynamic_Frequency);
-            Resampler.Resample (Buffer.all, Resampled);
-
-            Ring.Begin_Write (Cursor);
-            while Cursor.Has_Element and not Resampled.Is_Empty loop
-               Resampled.Pop (Frame);
-               Cursor.Push (Frame);
+            Source_Ring.Begin_Read (Source_Cursor);
+            while Source_Cursor.Has_Element and then Input_Count < Input_Block.Capacity loop
+               Source_Cursor.Pop (Sample);
+               Input_Count := Input_Count + 1;
+               Input_Block (Input_Count) := Sample;
             end loop;
-            Cursor.Commit_Write;
-         end;
+            Source_Cursor.Commit_Read;
 
-         Free_Queue.Push_Blocking (Buffer);
+            Stats.Observe_Source_Ring (Source_Ring.Length);
+
+            if Input_Count = 0 then
+               delay 0.001;
+            else
+               Input_Block.Set_Length (Input_Count);
+
+               declare
+                  Fill                 : constant Float := Level (CC.all);
+                  Error                : constant Float := Fill - 0.5;
+                  Dynamic_Delta        : Float;
+                  Dynamic_Frequency    : Float;
+                  Base_Input_Frequency : constant Float :=
+                    Float (Gade.Audio_Buffer.Samples_Second / 4);
+
+                  Resampled_Capacity : constant Positive :=
+                    Positive
+                      (Natural'Max
+                         (Natural
+                            (Float
+                               (Input_Block.Length *
+                                  Audio.Callbacks.Output_Frequency (CC.all)) /
+                             (Base_Input_Frequency * (1.0 - Max_Delta))) + 8,
+                          1));
+                  Resampled : Circular_Float_Buffers.Circular_Buffer
+                    (Resampled_Capacity);
+                  Frame  : Float_Frame;
+                  Cursor : Cursor_Ring_Frame_Buffers.Write_Cursor;
+               begin
+                  Integral_Error := Clamp (Integral_Error + Error,
+                                           -Integral_Limit,
+                                           Integral_Limit);
+
+                  Dynamic_Delta := Clamp (Error * Proportional_Gain +
+                                          Integral_Error * Integral_Gain,
+                                          -Max_Delta,
+                                          Max_Delta);
+                  Dynamic_Frequency :=
+                    Base_Input_Frequency * (1.0 + Dynamic_Delta);
+
+                  Resampler.Set_Input_Frequency (Dynamic_Frequency);
+                  Resampler.Resample (Input_Block, Resampled);
+
+                  Ring.Begin_Write (Cursor);
+                  while Cursor.Has_Element and not Resampled.Is_Empty loop
+                     Resampled.Pop (Frame);
+                     Cursor.Push (Frame);
+                  end loop;
+                  Cursor.Commit_Write;
+                  Stats.Observe_Output_Ring (Ring.Length);
+               end;
+            end if;
+         end;
       end loop;
    exception
       when E : others =>
@@ -189,31 +288,30 @@ package body Audio.IO is
    end Resampling_Task;
 
    procedure Queue_Asynchronously (Self : in out Instance) is
-      Buffer      : Bounded_Buffer_Access;
+      Buffer       : aliased Stereo_Sample_Buffer (Gade_Runner.Producer_Chunk_Samples);
       Frame_Count : Natural;
-
-      Buffer_Available : Boolean;
+      Buffer_Index : Positive := 1;
+      Cursor      : Cursor_Ring_Stereo_Samples.Write_Cursor;
    begin
-      Buffer_Available := not Self.Free_Queue.Is_Empty;
-
-      if Buffer_Available then
-         Self.Free_Queue.Pop_Blocking (Buffer);
-      else
-         Buffer := Self.Dummy_Buffer'Unrestricted_Access;
-      end if;
-
       Buffer.Set_Length (Buffer.Capacity);
-      Generate (Data_Access (Buffer), Frame_Count);
+      Generate (Data_Access (Buffer'Access), Frame_Count);
       Buffer.Set_Length (Frame_Count);
+      Stats.Add_Producer_Samples (Frame_Count);
+      Stats.Increment_Produced_Block;
 
-      if Buffer_Available then
-         if Self.Busy_Queue.Available > 0 then
-            Self.Busy_Queue.Push_Non_Blocking (Buffer);
-         else
-            --  Keep latency bounded by dropping producer blocks when saturated.
-            Self.Free_Queue.Push_Non_Blocking (Buffer);
+      while Buffer_Index <= Frame_Count loop
+         Self.Source_Ring.Begin_Write (Cursor);
+         while Cursor.Has_Element and then Buffer_Index <= Frame_Count loop
+            Cursor.Push (Buffer (Buffer_Index));
+            Buffer_Index := Buffer_Index + 1;
+         end loop;
+         Cursor.Commit_Write;
+         Stats.Observe_Source_Ring (Self.Source_Ring.Length);
+
+         if Buffer_Index <= Frame_Count then
+            delay 0.001;
          end if;
-      end if;
+      end loop;
    end Queue_Asynchronously;
 
    overriding
@@ -231,10 +329,11 @@ package body Audio.IO is
       Put_Debug ("Audio Finalize");
       Self.Device.Pause (True);
       Self.Device.Close;
-      abort Self.Resampler;
+      Self.Resampler.Stop;
       if Self.Callback_Context /= null then
          Free (Self.Callback_Context);
       end if;
+      Stats.Report;
       Self.Is_Shutdown := True;
    end Shutdown;
 
