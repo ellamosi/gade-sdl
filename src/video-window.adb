@@ -60,24 +60,28 @@ package body Video.Window is
      new SDL.Video.Textures.Lock
        (Pixel_Pointer_Type => SDL.Video.Pixels.ARGB_8888_Access.Pointer);
 
-   pragma Warnings
-     (Off,
-      "possible aliasing problem for type ""RGB32_Display_Buffer_Access""");
-   --  Allow strict aliasing analysis optimizations as type conversion is for a
-   --  read only use.
+   --  The locked SDL texture memory is intentionally reinterpreted as the
+   --  emulator display buffer type within the lock/unlock scope.
+   type RGB32_Display_Buffer_Access is access all RGB32_Display_Buffer;
+   pragma No_Strict_Aliasing (RGB32_Display_Buffer_Access);
+
    function ARGB_8888_Pointer_To_RGB32_Display_Buffer_Access is
      new Ada.Unchecked_Conversion
        (Source => SDL.Video.Pixels.ARGB_8888_Access.Pointer,
         Target => RGB32_Display_Buffer_Access);
-   pragma Warnings
-     (On,
-      "possible aliasing problem for type ""RGB32_Display_Buffer_Access""");
+
+   function To_Public_RGB32_Display_Buffer_Access is
+     new Ada.Unchecked_Conversion
+       (Source => RGB32_Display_Buffer_Access,
+        Target => Gade.Video_Buffer.RGB32_Display_Buffer_Access);
 
    procedure Render_Frame (Window : in out Window_Instance) is
       Pixel_Pointer : SDL.Video.Pixels.ARGB_8888_Access.Pointer;
    begin
       SDL_Texture_Lock (Window.Texture, Pixel_Pointer);
-      Generate_Frame (ARGB_8888_Pointer_To_RGB32_Display_Buffer_Access (Pixel_Pointer));
+      Generate_Frame
+        (To_Public_RGB32_Display_Buffer_Access
+           (ARGB_8888_Pointer_To_RGB32_Display_Buffer_Access (Pixel_Pointer)));
       SDL.Video.Textures.Unlock (Window.Texture);
 
       SDL.Video.Renderers.Clear (Window.Renderer);
