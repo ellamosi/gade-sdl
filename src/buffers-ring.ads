@@ -27,8 +27,6 @@ private
 
    type Data_Container is array (Positive range <>) of aliased Element_Type;
 
-   type Data_Container_Access is access all Data_Container;
-
    type Ring_Buffer (Size : Positive) is tagged record
       Data : aliased Data_Container (1 .. Size);
 

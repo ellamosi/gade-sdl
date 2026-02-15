@@ -66,12 +66,8 @@ private
    end Committed_Context;
 
    type Transactional_Ring_Buffer (Size : Positive) is tagged limited record
-      Data : aliased Data_Container (1 .. Size);
-
-      Committed   : Committed_Context (Size);
-      Read_Index  : Positive := 1;
-      Write_Index : Positive := 1;
-      Count       : Natural  := 0;
+      Data      : aliased Data_Container (1 .. Size);
+      Committed : Committed_Context (Size);
    end record;
 
 end Buffers.Transactional_Ring;
