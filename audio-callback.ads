@@ -1,4 +1,4 @@
-private package Audio.Callbacks is
+private package Audio.Callback is
    use Devices;
 
    type Callback_Context is tagged limited private;
@@ -40,4 +40,4 @@ private
 
    procedure Write_Silence (Buffer : out Bounded_Float_Buffers.Data_Container);
 
-end Audio.Callbacks;
+end Audio.Callback;

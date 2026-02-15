@@ -17,7 +17,7 @@ project Gade_SDL is
    package Naming renames Gade.Naming;
 
    package Builder is
-      for Executable ("gade_main.adb") use "gade";
+      for Executable ("main.adb") use "gade";
       for Default_Switches ("ada") use Gade.Builder'Default_Switches ("Ada") & ("-C", "-s");
    end Builder;
 
@@ -34,6 +34,6 @@ project Gade_SDL is
 
    package Pretty_Printer renames Gade.Pretty_Printer;
 
-   for Main use ("Gade_Main.adb");
+   for Main use ("main.adb");
 
 end Gade_SDL;

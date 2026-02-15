@@ -2,7 +2,7 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with SDL.Log;
 
-package Command_Line is
+package Cli is
 
    type Instance is tagged private;
 
@@ -24,4 +24,4 @@ private
 
    function Parse_Log_Priority (Priority : String) return SDL.Log.Priorities;
 
-end Command_Line;
+end Cli;

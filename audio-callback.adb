@@ -1,7 +1,7 @@
 with Ada.Text_IO;
 with Ada.Exceptions; use Ada.Exceptions;
 
-package body Audio.Callbacks is
+package body Audio.Callback is
 
    function Create
      (Ring : Ring_Buffer_Access)
@@ -98,4 +98,4 @@ package body Audio.Callbacks is
    function Output_Frequency (Context : Callback_Context) return Positive
    is (Context.Output_Frequency);
 
-end Audio.Callbacks;
+end Audio.Callback;

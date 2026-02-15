@@ -1,11 +1,11 @@
 with Gade.Interfaces;   use Gade.Interfaces;
-with Gade_Window;       use Gade_Window;
+with Video.Window;       use Video.Window;
 with Audio.IO;
 with Gade.Video_Buffer; use Gade.Video_Buffer;
 
 with SDL.Timers; use SDL.Timers;
 
-package Gade_Runner is
+package Runtime.Main_Loop is
 
    Max_Frame_Rendering_Rate : constant := 60;
    Producer_Chunk_Samples   : constant Natural := 2_048;
@@ -16,7 +16,7 @@ package Gade_Runner is
 
    procedure Step (Runner   : in out Instance;
                    G        : in out Gade_Type;
-                   Window   : in out Gade_Window_Type;
+                   Window   : in out Window_Instance;
                    Audio_IO : in out Audio.IO.Instance);
 
 private
@@ -30,7 +30,7 @@ private
 
    procedure Generate_And_Render
      (G        : in out Gade_Type;
-      Window   : in out Gade_Window_Type;
+      Window   : in out Window_Instance;
       Audio_IO : in out Audio.IO.Instance);
 
    procedure Generate_And_Discard
@@ -42,4 +42,4 @@ private
       Video_Buffer : RGB32_Display_Buffer_Access;
       Audio_IO     : in out Audio.IO.Instance);
 
-end Gade_Runner;
+end Runtime.Main_Loop;

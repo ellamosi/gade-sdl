@@ -4,27 +4,27 @@ with GNAT.Traceback.Symbolic;
 
 with Gade.Interfaces; use Gade.Interfaces;
 
-with Audio.IO;     use Audio.IO;
-with Gade_Runner;  use Gade_Runner;
-with Gade_Window;  use Gade_Window;
-with Gade_Input;   use Gade_Input;
-with Command_Line; use Command_Line;
-with Frame_Timers;
+with Audio.IO;            use Audio.IO;
+with Runtime.Main_Loop;        use Runtime.Main_Loop;
+with Video.Window;        use Video.Window;
+with Input;
+with Cli;
+with Runtime.Frame_Pacing;
 
 with SDL.Log; use SDL.Log;
 
 with Ada.Exceptions; use Ada.Exceptions;
 
-procedure Gade_Main is
+procedure Main is
    --  use GNAT.Traceback;
    --  use GNAT.Traceback.Symbolic;
 
    G        : Gade_Type;
-   Window   : Gade_Window_Type;
+   Window   : Window_Instance;
    Audio_IO : Audio.IO.Instance;
-   Input    : aliased Gade_Input.Instance;
-   Runner   : Gade_Runner.Instance;
-   CLI      : Command_Line.Instance;
+   Input_Reader : aliased Input.Instance;
+   Runner   : Runtime.Main_Loop.Instance;
+   Args     : Cli.Instance;
 
    Limit_FPS : Boolean;
 
@@ -34,15 +34,15 @@ procedure Gade_Main is
       Window.Set_FPS (Value);
    end Display_FPS;
 
-   package Window_FPS_Frame_Timers is new Frame_Timers (Display_FPS);
+   package Window_FPS_Frame_Timers is new Runtime.Frame_Pacing (Display_FPS);
 
    Frame_Timer : Window_FPS_Frame_Timers.Frame_Timer;
 
    procedure Wait_Loop;
    procedure Wait_Loop is
    begin
-      while not Input.Quit and not Input.File_Dropped loop
-         Input.Wait;
+      while not Input_Reader.Quit and not Input_Reader.File_Dropped loop
+         Input_Reader.Wait;
       end loop;
    end Wait_Loop;
 
@@ -55,15 +55,15 @@ procedure Gade_Main is
 
       Frame_Timer.Reset;
 
-      while not Input.Quit and not Input.File_Dropped loop
+      while not Input_Reader.Quit and not Input_Reader.File_Dropped loop
          Frame_Timer.Time_Frame;
 
          Step (Runner, G, Window, Audio_IO);
 
-         Input.Poll;
+         Input_Reader.Poll;
 
-         Limit_FPS := Limit_FPS or Input.Fast_Forward;
-         if Limit_FPS and not Input.Fast_Forward then
+         Limit_FPS := Limit_FPS or Input_Reader.Fast_Forward;
+         if Limit_FPS and not Input_Reader.Fast_Forward then
             Frame_Timer.Delay_Until_Next;
          end if;
       end loop;
@@ -71,30 +71,30 @@ procedure Gade_Main is
 begin
    if not SDL.Initialise then raise Program_Error; end if;
 
-   Parse (CLI);
+   Cli.Parse (Args);
 
-   SDL.Log.Set (Category => SDL.Log.Application, Priority => CLI.Log_Priority);
+   SDL.Log.Set (Category => SDL.Log.Application, Priority => Cli.Log_Priority (Args));
 
-   Limit_FPS := not CLI.Uncapped_FPS;
+   Limit_FPS := not Cli.Uncapped_FPS (Args);
 
    Create (Window);
    Create (Audio_IO);
-   Create (Input);
+   Input.Create (Input_Reader);
    Create (Runner);
 
    Put_Debug ("Initializing libgade");
    Create (G);
    Put_Debug ("Setting up input handling");
-   Set_Input_Reader (G, Input'Access);
+   Set_Input_Reader (G, Input_Reader'Access);
 
-   while not Input.Quit loop
-      if CLI.ROM_Filename /= "" then
-         Render_Loop (CLI.ROM_Filename);
-      elsif Input.File_Dropped then
+   while not Input_Reader.Quit loop
+      if Cli.ROM_Filename (Args) /= "" then
+         Render_Loop (Cli.ROM_Filename (Args));
+      elsif Input_Reader.File_Dropped then
          declare
-            Filename : constant String := Input.Dropped_Filename;
+            Filename : constant String := Input_Reader.Dropped_Filename;
          begin
-            Input.Clear_Dropped_File;
+            Input_Reader.Clear_Dropped_File;
             Render_Loop (Filename);
          end;
       else
@@ -112,4 +112,4 @@ exception
       Ada.Text_IO.Put_Line ("Main Thread Exception");
       Ada.Text_IO.Put_Line (Exception_Message (E));
       Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));
-end Gade_Main;
+end Main;

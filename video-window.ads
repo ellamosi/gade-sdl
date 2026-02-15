@@ -6,28 +6,28 @@ with SDL.Video.Windows;
 with SDL.Video.Textures;
 with SDL.Video.Renderers;
 
-package Gade_Window is
+package Video.Window is
 
-   type Gade_Window_Type is new Limited_Controlled with private;
+   type Window_Instance is new Limited_Controlled with private;
 
-   procedure Create (Window : out Gade_Window_Type);
+   procedure Create (Window : out Window_Instance);
 
-   procedure Shutdown (Window : in out Gade_Window_Type);
+   procedure Shutdown (Window : in out Window_Instance);
 
    generic
       with procedure Generate_Frame (Buffer : RGB32_Display_Buffer_Access);
-   procedure Render_Frame (Window : in out Gade_Window_Type);
+   procedure Render_Frame (Window : in out Window_Instance);
 
    procedure Set_FPS
-     (Window : in out Gade_Window_Type;
+     (Window : in out Window_Instance;
       FPS    : Float);
 
    overriding
-   procedure Finalize (Window : in out Gade_Window_Type);
+   procedure Finalize (Window : in out Window_Instance);
 
 private
 
-   type Gade_Window_Type is new Limited_Controlled with record
+   type Window_Instance is new Limited_Controlled with record
       Window   : SDL.Video.Windows.Window;
       Texture  : SDL.Video.Textures.Texture;
       Renderer : SDL.Video.Renderers.Renderer;
@@ -35,4 +35,4 @@ private
       Is_Shutdown : Boolean := False;
    end record;
 
-end Gade_Window;
+end Video.Window;

@@ -2,7 +2,7 @@ private with Buffers.Ring;
 
 generic
    type Element_Type is private;
-package Buffers.Protected_Blocking_Queue is
+package Buffers.Blocking_Queue is
 
    type Protected_Blocking_Queue (Size : Positive) is tagged limited private;
 
@@ -62,4 +62,4 @@ private
       Protected_Buffer : Protected_Blocking_Queue_Impl (Size);
    end record;
 
-end Buffers.Protected_Blocking_Queue;
+end Buffers.Blocking_Queue;

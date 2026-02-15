@@ -1,4 +1,4 @@
-private package Audio.Resamplers is
+private package Audio.Resampler is
 
    type Resampler is tagged private;
 
@@ -33,4 +33,4 @@ private
       Frame  : Stereo_Sample;
       Output : in out Circular_Float_Buffers.Ring_Buffer);
 
-end Audio.Resamplers;
+end Audio.Resampler;

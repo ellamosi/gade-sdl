@@ -7,8 +7,8 @@ with Ada.Text_IO;
 with Ada.Exceptions; use Ada.Exceptions;
 with Ada.Unchecked_Deallocation;
 
-with Audio.Resamplers;
-with Gade_Runner;
+with Audio.Resampler;
+with Runtime.Main_Loop;
 
 package body Audio.IO is
 
@@ -185,7 +185,7 @@ package body Audio.IO is
       Source_Ring : Source_Ring_Buffer_Access;
       Ring        : Ring_Buffer_Access;
 
-      Resampler      : Audio.Resamplers.Resampler;
+      Resampler      : Audio.Resampler.Resampler;
       Integral_Error : Float := 0.0;
    begin
       accept Start
@@ -200,7 +200,7 @@ package body Audio.IO is
 
       Resampler.Reset
         (Float (Gade.Audio_Buffer.Samples_Second / 4),
-         Float (Audio.Callbacks.Output_Frequency (CC.all)));
+         Float (Audio.Callback.Output_Frequency (CC.all)));
 
       loop
          select
@@ -212,7 +212,7 @@ package body Audio.IO is
 
          declare
             Source_Cursor : Cursor_Ring_Stereo_Samples.Read_Cursor;
-            Input_Block   : Stereo_Sample_Buffer (Gade_Runner.Producer_Chunk_Samples);
+            Input_Block   : Stereo_Sample_Buffer (Runtime.Main_Loop.Producer_Chunk_Samples);
             Input_Count   : Natural := 0;
             Sample        : Stereo_Sample;
          begin
@@ -245,7 +245,7 @@ package body Audio.IO is
                          (Natural
                             (Float
                                (Input_Block.Length *
-                                  Audio.Callbacks.Output_Frequency (CC.all)) /
+                                  Audio.Callback.Output_Frequency (CC.all)) /
                              (Base_Input_Frequency * (1.0 - Max_Delta))) + 8,
                           1));
                   Resampled : Circular_Float_Buffers.Ring_Buffer
@@ -285,7 +285,7 @@ package body Audio.IO is
    end Resampling_Task;
 
    procedure Queue_Asynchronously (Self : in out Instance) is
-      Buffer       : aliased Stereo_Sample_Buffer (Gade_Runner.Producer_Chunk_Samples);
+      Buffer       : aliased Stereo_Sample_Buffer (Runtime.Main_Loop.Producer_Chunk_Samples);
       Frame_Count : Natural;
       Buffer_Index : Positive := 1;
       Cursor      : Cursor_Ring_Stereo_Samples.Write_Cursor;

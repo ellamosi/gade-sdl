@@ -1,6 +1,6 @@
 with Gade.Audio_Buffer; use Gade.Audio_Buffer;
 
-package body Gade_Runner is
+package body Runtime.Main_Loop is
    --  TODO: Possibly rename to Renderer
 
    procedure Create (Runner : out Instance) is
@@ -11,7 +11,7 @@ package body Gade_Runner is
    procedure Step
      (Runner   : in out Instance;
       G        : in out Gade_Type;
-      Window   : in out Gade_Window_Type;
+      Window   : in out Window_Instance;
       Audio_IO : in out Audio.IO.Instance)
    is
       Ticks : constant Milliseconds := SDL.Timers.Ticks;
@@ -26,7 +26,7 @@ package body Gade_Runner is
 
    procedure Generate_And_Render
      (G        : in out Gade_Type;
-      Window   : in out Gade_Window_Type;
+      Window   : in out Window_Instance;
       Audio_IO : in out Audio.IO.Instance)
    is
       procedure Generate_Frame (Buffer : RGB32_Display_Buffer_Access);
@@ -35,7 +35,7 @@ package body Gade_Runner is
          Generate (G, Buffer, Audio_IO);
       end Generate_Frame;
 
-      procedure Render_Frame is new Gade_Window.Render_Frame (Generate_Frame);
+      procedure Render_Frame is new Video.Window.Render_Frame (Generate_Frame);
    begin
       Render_Frame (Window);
    end Generate_And_Render;
@@ -83,4 +83,4 @@ package body Gade_Runner is
       end loop;
    end Generate;
 
-end Gade_Runner;
+end Runtime.Main_Loop;

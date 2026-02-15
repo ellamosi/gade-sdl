@@ -1,4 +1,4 @@
-package body Frame_Timers is
+package body Runtime.Frame_Pacing is
 
    procedure Reset (Self : out Frame_Timer) is
    begin
@@ -21,7 +21,7 @@ package body Frame_Timers is
    end Delay_Until_Next;
 
    procedure Reset
-     (Self      : out Frame_Timers.FPS_Sampler;
+     (Self      : out Runtime.Frame_Pacing.FPS_Sampler;
       Now_Ticks : Milliseconds)
    is
    begin
@@ -31,7 +31,7 @@ package body Frame_Timers is
    end Reset;
 
    procedure Sample_Frame
-     (Self      : in out Frame_Timers.FPS_Sampler;
+     (Self      : in out Runtime.Frame_Pacing.FPS_Sampler;
       Now_Ticks : Milliseconds)
    is
       Sampled_Ticks : Milliseconds;
@@ -47,4 +47,4 @@ package body Frame_Timers is
       end if;
    end Sample_Frame;
 
-end Frame_Timers;
+end Runtime.Frame_Pacing;

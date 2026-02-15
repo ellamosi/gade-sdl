@@ -1,4 +1,4 @@
-private with Audio.Callbacks;
+private with Audio.Callback;
 
 with SDL.Audio.Sample_Formats;
 
@@ -21,7 +21,7 @@ package Audio.IO is
    procedure Finalize (Self : in out Instance);
 
 private
-   use Audio.Callbacks, Devices;
+   use Audio.Callback, Devices;
 
    Desired_Output_Frequency : constant Positive := 48_000;
    --  Hz

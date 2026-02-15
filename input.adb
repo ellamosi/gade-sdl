@@ -4,7 +4,7 @@ with SDL.Log;
 
 with Interfaces.C.Strings; use Interfaces.C.Strings;
 
-package body Gade_Input is
+package body Input is
 
    procedure Create (Input : out Instance) is
    begin
@@ -116,4 +116,4 @@ package body Gade_Input is
       end case;
    end Set_Button_Pressed;
 
-end Gade_Input;
+end Input;

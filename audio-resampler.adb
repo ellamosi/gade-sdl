@@ -1,4 +1,4 @@
-package body Audio.Resamplers is
+package body Audio.Resampler is
 
    procedure Reset
      (Self             : in out Resampler;
@@ -60,4 +60,4 @@ package body Audio.Resamplers is
       Self.Ratio           := Input_Frequency / Self.Output_Frequency;
    end Set_Input_Frequency;
 
-end Audio.Resamplers;
+end Audio.Resampler;

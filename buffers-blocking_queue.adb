@@ -1,4 +1,4 @@
-package body Buffers.Protected_Blocking_Queue is
+package body Buffers.Blocking_Queue is
 
    procedure Push_Blocking
      (Self : in out Protected_Blocking_Queue;
@@ -96,4 +96,4 @@ package body Buffers.Protected_Blocking_Queue is
 
    end Protected_Blocking_Queue_Impl;
 
-end Buffers.Protected_Blocking_Queue;
+end Buffers.Blocking_Queue;

@@ -2,7 +2,7 @@ with SDL.Timers; use SDL.Timers;
 
 generic
    with procedure Display_FPS (Vale : Float);
-package Frame_Timers is
+package Runtime.Frame_Pacing is
 
    type Frame_Timer is tagged private;
 
@@ -32,8 +32,8 @@ private
                            Now_Ticks : Milliseconds);
 
    type Frame_Timer is tagged record
-      FPS_Sampler : Frame_Timers.FPS_Sampler;
+      FPS_Sampler : Runtime.Frame_Pacing.FPS_Sampler;
       Frame_Ticks : Milliseconds;
    end record;
 
-end Frame_Timers;
+end Runtime.Frame_Pacing;

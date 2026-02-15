@@ -4,7 +4,7 @@ with SDL.Events.Events;
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
-package Gade_Input is
+package Input is
 
    type Instance is new Input_Reader_Type with private;
 
@@ -45,4 +45,4 @@ private
       Event   : SDL.Events.Events.Events;
       Pressed : Boolean);
 
-end Gade_Input;
+end Input;

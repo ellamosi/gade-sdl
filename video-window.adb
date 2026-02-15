@@ -8,11 +8,11 @@ with SDL.Video.Textures.Makers;
 with SDL.Video.Pixel_Formats;
 with SDL.Video.Pixels;
 with SDL.Log; use SDL.Log;
-package body Gade_Window is
+package body Video.Window is
    Cocoa_Renderer_Driver : constant Positive := 1;
    --  Preferred renderer driver on macOS for sharper scaling in this setup.
 
-   procedure Create (Window : out Gade_Window_Type) is
+   procedure Create (Window : out Window_Instance) is
       procedure Create_Default_Renderer;
       procedure Create_Default_Renderer is
       begin
@@ -73,7 +73,7 @@ package body Gade_Window is
      (On,
       "possible aliasing problem for type ""RGB32_Display_Buffer_Access""");
 
-   procedure Render_Frame (Window : in out Gade_Window_Type) is
+   procedure Render_Frame (Window : in out Window_Instance) is
       Pixel_Pointer : SDL.Video.Pixels.ARGB_8888_Access.Pointer;
    begin
       SDL_Texture_Lock (Window.Texture, Pixel_Pointer);
@@ -86,7 +86,7 @@ package body Gade_Window is
    end Render_Frame;
 
    procedure Set_FPS
-     (Window : in out Gade_Window_Type;
+     (Window : in out Window_Instance;
       FPS    :        Float)
    is
       FPS_Int        : constant Integer := Integer (FPS);
@@ -97,12 +97,12 @@ package body Gade_Window is
    end Set_FPS;
 
    overriding
-   procedure Finalize (Window : in out Gade_Window_Type) is
+   procedure Finalize (Window : in out Window_Instance) is
    begin
       Shutdown (Window);
    end Finalize;
 
-   procedure Shutdown (Window : in out Gade_Window_Type) is
+   procedure Shutdown (Window : in out Window_Instance) is
    begin
       if not Window.Is_Created or else Window.Is_Shutdown then
          return;
@@ -115,4 +115,4 @@ package body Gade_Window is
       Window.Is_Shutdown := True;
    end Shutdown;
 
-end Gade_Window;
+end Video.Window;
