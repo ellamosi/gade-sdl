@@ -286,9 +286,9 @@ package body Audio.IO is
 
    procedure Queue_Asynchronously (Self : in out Instance) is
       Buffer       : aliased Stereo_Sample_Buffer (Runtime.Main_Loop.Producer_Chunk_Samples);
-      Frame_Count : Natural;
+      Frame_Count  : Natural;
       Buffer_Index : Positive := 1;
-      Cursor      : Cursor_Ring_Stereo_Samples.Write_Cursor;
+      Cursor       : Cursor_Ring_Stereo_Samples.Write_Cursor;
    begin
       Buffer.Set_Length (Buffer.Capacity);
       Generate (Data_Access (Buffer'Access), Frame_Count);
