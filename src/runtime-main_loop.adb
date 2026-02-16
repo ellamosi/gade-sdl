@@ -56,7 +56,8 @@ package body Runtime.Main_Loop is
       Audio_IO     : in out Audio.IO.Instance)
    is
       Requested_Samples : constant Natural := Producer_Chunk_Samples;
-      Actual_Samples    : Natural; -- Per frame
+      --  Audio samples generated for the current queued block.
+      Actual_Samples    : Natural;
       Frame_Finished    : Boolean := False;
 
       procedure Generate_Samples (Audio_Buffer : Audio_Buffer_Access;
@@ -71,7 +72,6 @@ package body Runtime.Main_Loop is
                   Audio_Buffer,
                   Frame_Finished);
 
-         Actual_Samples := Actual_Samples / 4;
          Count := Actual_Samples;
       end Generate_Samples;
 
