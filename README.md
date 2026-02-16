@@ -2,14 +2,14 @@
 
 ![Gade SDL on macOS](docs/assets/gade-sdl-macos-window.png)
 
-A [SDL2](https://www.libsdl.org/) front end in Ada for [libgade](https://github.com/ellamosi/libgade), intended as an easily portable reference implementation.
+A [SDL](https://www.libsdl.org/) front end in Ada for [libgade](https://github.com/ellamosi/libgade), intended as an easily portable reference implementation.
 
 ## Dependencies
 
 - GNAT Ada 2019 toolchain
 - [libgade](https://github.com/ellamosi/libgade) (sibling project dependency)
 - [SDLAda](https://github.com/ada-game-framework/sdlada) (sibling project dependency)
-- SDL2 + SDL2_ttf
+  - Which in turn depends on SDL2
 
 ## Usage
 

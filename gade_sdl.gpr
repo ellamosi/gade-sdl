@@ -23,11 +23,9 @@ project Gade_SDL is
 
    package Linker is
       for Default_Switches ("ada") use Gade.Linker'Default_Switches ("Ada") & ("-L/usr/local/lib",
-                                                                               -- "-lSDL2",
                                                                                "-mmacosx-version-min=12.0",
                                                                                "-F/Library/Frameworks",
-                                                                               "-framework", "SDL2",
-                                                                               "-framework", "SDL2_ttf");
+                                                                               "-framework", "SDL2");
    end Linker;
 
    package Compiler renames Gade.Compiler;
