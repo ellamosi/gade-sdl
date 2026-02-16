@@ -26,7 +26,7 @@ package body Runtime.Frame_Pacing is
    is
    begin
       Self.Last_Update := Now_Ticks;
-      Self.Next_Update := Now_Ticks + Min_Ticks_Per_FPS_Sample;
+      Self.Next_Update := Now_Ticks + Ticks_Per_FPS_Sample;
       Self.Frame_Count := 0;
    end Reset;
 

@@ -7,7 +7,6 @@ with SDL.Timers; use SDL.Timers;
 
 package Runtime.Main_Loop is
 
-   Max_Frame_Rendering_Rate : constant := 60;
    Producer_Chunk_Samples   : constant Natural := 2_048;
 
    type Instance is limited private;
@@ -20,9 +19,6 @@ package Runtime.Main_Loop is
                    Audio_IO : in out Audio.IO.Instance);
 
 private
-
-   Min_Frame_Duration : constant Milliseconds :=
-     1000 / Max_Frame_Rendering_Rate;
 
    type Instance is record
       Last_Frame_Rendered_Ticks : Milliseconds;

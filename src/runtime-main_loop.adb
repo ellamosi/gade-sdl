@@ -15,7 +15,7 @@ package body Runtime.Main_Loop is
    is
       Ticks : constant Milliseconds := SDL.Timers.Ticks;
    begin
-      if Ticks - Runner.Last_Frame_Rendered_Ticks >= Min_Frame_Duration then
+      if Ticks - Runner.Last_Frame_Rendered_Ticks >= Ticks_Per_Frame then
          Generate_And_Render (G, Window, Audio_IO);
          Runner.Last_Frame_Rendered_Ticks := Ticks;
       else

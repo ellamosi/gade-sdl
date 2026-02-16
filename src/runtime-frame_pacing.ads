@@ -14,10 +14,7 @@ package Runtime.Frame_Pacing is
 
 private
 
-   Target_Frame_Rate : constant := 60;
-   Ticks_Per_Frame   : constant Milliseconds := 1000 / Target_Frame_Rate;
-
-   Min_Ticks_Per_FPS_Sample : constant := 1000;
+   Ticks_Per_FPS_Sample : constant := 1000;
 
    type FPS_Sampler is tagged record
       Frame_Count : Natural;
