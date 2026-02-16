@@ -131,6 +131,8 @@ package body Audio.IO is
       Obtained : Obtained_Spec renames Self.Spec;
       Callback  : Audio_Callback;
       User_Data : User_Data_Access;
+      Device_Opened    : Boolean := False;
+      Resampler_Started : Boolean := False;
 
    begin
       Stats.Reset;
@@ -154,6 +156,7 @@ package body Audio.IO is
             User_Data => User_Data,
             Desired   => Requested,
             Obtained  => Obtained);
+      Device_Opened := True;
       Self.Is_Created := True;
       Self.Is_Shutdown := False;
 
@@ -176,8 +179,45 @@ package body Audio.IO is
       Self.Resampler.Start (Self.Callback_Context,
                             Self.Source_Ring'Unchecked_Access,
                             Self.Ring'Unchecked_Access);
+      Resampler_Started := True;
 
       Self.Device.Pause (False);
+   exception
+      when others =>
+         if Device_Opened then
+            begin
+               Self.Device.Pause (True);
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Resampler_Started then
+            begin
+               Self.Resampler.Stop;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Device_Opened then
+            begin
+               Self.Device.Close;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Self.Callback_Context /= null then
+            Free (Self.Callback_Context);
+         end if;
+
+         Self.Is_Created := False;
+         Self.Is_Shutdown := False;
+         raise;
    end Create;
 
    task body Resampling_Task is
