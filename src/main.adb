@@ -17,16 +17,14 @@ with Ada.Exceptions; use Ada.Exceptions;
 
 procedure Main is
 
-
    G        : Gade_Type;
    Window   : Window_Instance;
-   Audio_IO : Audio.IO.Instance;
    Audio_IO : Audio.IO.Instance;
    Input_Reader : aliased Input.Instance;
    Runner   : Runtime.Main_Loop.Instance;
    Args     : Cli.Instance;
 
-   Limit_FPS : Boolean;
+   Uncapped_FPS : Boolean;
 
    procedure Display_FPS (Value : Float);
    procedure Display_FPS (Value : Float) is
@@ -62,8 +60,7 @@ procedure Main is
 
          Input_Reader.Poll;
 
-         Limit_FPS := Limit_FPS or Input_Reader.Fast_Forward;
-         if Limit_FPS and not Input_Reader.Fast_Forward then
+         if not Uncapped_FPS and not Input_Reader.Fast_Forward then
             Frame_Timer.Delay_Until_Next;
          end if;
       end loop;
@@ -75,7 +72,7 @@ begin
 
    SDL.Log.Set (Category => SDL.Log.Application, Priority => Cli.Log_Priority (Args));
 
-   Limit_FPS := not Cli.Uncapped_FPS (Args);
+   Uncapped_FPS := Cli.Uncapped_FPS (Args);
 
    Create (Window);
    Create (Audio_IO);
