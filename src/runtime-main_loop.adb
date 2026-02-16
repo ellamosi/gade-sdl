@@ -55,7 +55,7 @@ package body Runtime.Main_Loop is
       Video_Buffer : RGB32_Display_Buffer_Access;
       Audio_IO     : in out Audio.IO.Instance)
    is
-      Requested_Samples : constant Natural := Producer_Chunk_Samples;
+      Requested_Samples : constant Natural := Producer_Chunk_Samples - 4;
       --  Audio samples generated for the current queued block.
       Actual_Samples    : Natural;
       Frame_Finished    : Boolean := False;
@@ -71,7 +71,6 @@ package body Runtime.Main_Loop is
                   Video_Buffer,
                   Audio_Buffer,
                   Frame_Finished);
-
          Count := Actual_Samples;
       end Generate_Samples;
 
