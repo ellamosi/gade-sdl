@@ -16,11 +16,11 @@ with SDL.Log; use SDL.Log;
 with Ada.Exceptions; use Ada.Exceptions;
 
 procedure Main is
-   --  use GNAT.Traceback;
-   --  use GNAT.Traceback.Symbolic;
+
 
    G        : Gade_Type;
    Window   : Window_Instance;
+   Audio_IO : Audio.IO.Instance;
    Audio_IO : Audio.IO.Instance;
    Input_Reader : aliased Input.Instance;
    Runner   : Runtime.Main_Loop.Instance;
