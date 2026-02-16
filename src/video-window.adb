@@ -13,6 +13,10 @@ package body Video.Window is
    --  Preferred renderer driver on macOS for sharper scaling in this setup.
 
    procedure Create (Window : out Window_Instance) is
+      Window_Created   : Boolean := False;
+      Renderer_Created : Boolean := False;
+      Texture_Created  : Boolean := False;
+
       procedure Create_Default_Renderer;
       procedure Create_Default_Renderer is
       begin
@@ -29,6 +33,7 @@ package body Video.Window is
          Y      => 100,
          Width  => Display_Width * 2,
          Height => Display_Height * 2);
+      Window_Created := True;
 
       begin
          SDL.Video.Renderers.Makers.Create
@@ -40,10 +45,13 @@ package body Video.Window is
 
          --  Validate renderer creation; Maker.Create does not raise on failure.
          SDL.Video.Renderers.Clear (Window.Renderer);
+         Renderer_Created := True;
       exception
          when SDL.Video.Renderers.Renderer_Error =>
             SDL.Video.Renderers.Finalize (Window.Renderer);
             Create_Default_Renderer;
+            Renderer_Created := True;
+            SDL.Video.Renderers.Clear (Window.Renderer);
       end;
 
       SDL.Video.Textures.Makers.Create
@@ -52,8 +60,26 @@ package body Video.Window is
          Format   => SDL.Video.Pixel_Formats.Pixel_Format_RGB_888,
          Kind     => SDL.Video.Textures.Streaming,
          Size     => (Display_Width, Display_Height));
+      Texture_Created := True;
       Window.Is_Created := True;
       Window.Is_Shutdown := False;
+   exception
+      when others =>
+         if Texture_Created then
+            SDL.Video.Textures.Finalize (Window.Texture);
+         end if;
+
+         if Renderer_Created then
+            SDL.Video.Renderers.Finalize (Window.Renderer);
+         end if;
+
+         if Window_Created then
+            SDL.Video.Windows.Finalize (Window.Window);
+         end if;
+
+         Window.Is_Created := False;
+         Window.Is_Shutdown := False;
+         raise;
    end Create;
 
    procedure SDL_Texture_Lock is
