@@ -113,6 +113,10 @@ package body Video.Window is
       SDL.Video.Renderers.Clear (Window.Renderer);
       SDL.Video.Renderers.Copy (Window.Renderer, Window.Texture);
       SDL.Video.Renderers.Present (Window.Renderer);
+   exception
+      when others =>
+         SDL.Video.Textures.Unlock (Window.Texture);
+         raise;
    end Render_Frame;
 
    procedure Set_FPS
