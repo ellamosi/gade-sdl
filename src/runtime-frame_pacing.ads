@@ -1,7 +1,7 @@
 with SDL.Timers; use SDL.Timers;
 
 generic
-   with procedure Display_FPS (Vale : Float);
+   with procedure Display_FPS (Value : Float);
 package Runtime.Frame_Pacing is
 
    type Frame_Timer is tagged private;
