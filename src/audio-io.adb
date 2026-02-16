@@ -199,7 +199,7 @@ package body Audio.IO is
       end Start;
 
       Resampler.Reset
-        (Float (Gade.Audio_Buffer.Samples_Second / 4),
+        (Float (Gade.Audio_Buffer.Samples_Second),
          Float (Audio.Callback.Output_Frequency (CC.all)));
 
       loop
@@ -237,7 +237,7 @@ package body Audio.IO is
                   Dynamic_Delta        : Float;
                   Dynamic_Frequency    : Float;
                   Base_Input_Frequency : constant Float :=
-                    Float (Gade.Audio_Buffer.Samples_Second / 4);
+                    Float (Gade.Audio_Buffer.Samples_Second);
 
                   Resampled_Capacity : constant Positive :=
                     Positive
