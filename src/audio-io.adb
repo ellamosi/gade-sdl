@@ -197,7 +197,6 @@ package body Audio.IO is
       Self.Device.Pause (False);
    exception
       when others =>
-         Put_Info ("Audio.IO.Create Exception");
          if Device_Opened then
             begin
                Self.Device.Pause (True);
@@ -227,7 +226,6 @@ package body Audio.IO is
 
          if Self.Callback_Context /= null then
             Free (Self.Callback_Context);
-            Self.Callback_Context := null;
          end if;
 
          Self.Is_Created := False;
