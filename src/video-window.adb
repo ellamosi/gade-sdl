@@ -8,23 +8,47 @@ with SDL.Video.Textures.Makers;
 with SDL.Video.Pixel_Formats;
 with SDL.Video.Pixels;
 with SDL.Log; use SDL.Log;
+
 package body Video.Window is
-   Cocoa_Renderer_Driver : constant Positive := 1;
-   --  Preferred renderer driver on macOS for sharper scaling in this setup.
+   Default_Renderer_Driver : constant Integer := -1;
+   --  Preferred renderer driver on MacOS for sharper scaling in this setup.
+   Cocoa_Renderer_Driver : constant Integer := 1;
+
+   procedure Create_Renderer
+     (Window         : in out Window_Instance;
+      Created        : out Boolean;
+      Driver         : Integer := Default_Renderer_Driver;
+      Raise_On_Error : Boolean := False);
+   procedure Create_Renderer
+     (Window         : in out Window_Instance;
+      Created        : out Boolean;
+      Driver         : Integer := Default_Renderer_Driver;
+      Raise_On_Error : Boolean := False)
+   is
+   begin
+      Created := False;
+      SDL.Video.Renderers.Makers.Create
+        (Rend   => Window.Renderer,
+         Window => Window.Window,
+         Flags  => SDL.Video.Renderers.Accelerated,
+         Driver => Driver);
+
+      --  Validate renderer creation; Maker.Create does not raise on failure.
+      SDL.Video.Renderers.Clear (Window.Renderer);
+      Created := True;
+   exception
+      when SDL.Video.Renderers.Renderer_Error =>
+         begin
+            SDL.Video.Renderers.Finalize (Window.Renderer);
+         exception
+            when others => null;
+         end;
+         if Raise_On_Error then raise; end if;
+   end Create_Renderer;
 
    procedure Create (Window : out Window_Instance) is
-      Window_Created   : Boolean := False;
       Renderer_Created : Boolean := False;
-      Texture_Created  : Boolean := False;
-
-      procedure Create_Default_Renderer;
-      procedure Create_Default_Renderer is
-      begin
-         SDL.Video.Renderers.Makers.Create
-           (Rend   => Window.Renderer,
-            Window => Window.Window,
-            Flags  => SDL.Video.Renderers.Accelerated);
-      end Create_Default_Renderer;
+      Window_Created   : Boolean := False;
    begin
       SDL.Video.Windows.Makers.Create
         (Win    => Window.Window,
@@ -35,24 +59,10 @@ package body Video.Window is
          Height => Display_Height * 2);
       Window_Created := True;
 
-      begin
-         SDL.Video.Renderers.Makers.Create
-           (Rend   => Window.Renderer,
-            Window => Window.Window,
-            Driver => Cocoa_Renderer_Driver,
-            --  Cocoa: preferred on macOS as it avoids blurry scaling.
-            Flags  => SDL.Video.Renderers.Accelerated);
-
-         --  Validate renderer creation; Maker.Create does not raise on failure.
-         SDL.Video.Renderers.Clear (Window.Renderer);
-         Renderer_Created := True;
-      exception
-         when SDL.Video.Renderers.Renderer_Error =>
-            SDL.Video.Renderers.Finalize (Window.Renderer);
-            Create_Default_Renderer;
-            Renderer_Created := True;
-            SDL.Video.Renderers.Clear (Window.Renderer);
-      end;
+      Create_Renderer (Window, Renderer_Created, Cocoa_Renderer_Driver);
+      if not Renderer_Created then
+         Create_Renderer (Window, Renderer_Created, Raise_On_Error => True);
+      end if;
 
       SDL.Video.Textures.Makers.Create
         (Tex      => Window.Texture,
@@ -60,15 +70,11 @@ package body Video.Window is
          Format   => SDL.Video.Pixel_Formats.Pixel_Format_RGB_888,
          Kind     => SDL.Video.Textures.Streaming,
          Size     => (Display_Width, Display_Height));
-      Texture_Created := True;
+
       Window.Is_Created := True;
       Window.Is_Shutdown := False;
    exception
       when others =>
-         if Texture_Created then
-            SDL.Video.Textures.Finalize (Window.Texture);
-         end if;
-
          if Renderer_Created then
             SDL.Video.Renderers.Finalize (Window.Renderer);
          end if;
@@ -123,7 +129,7 @@ package body Video.Window is
      (Window : in out Window_Instance;
       FPS    :        Float)
    is
-      FPS_Int        : constant Integer := Integer (FPS);
+      FPS_Int        : constant Positive := Positive (FPS);
       FPS_Str_Raw    : constant String := FPS_Int'Image;
       FPS_Str_Sliced : constant String := FPS_Str_Raw (2 .. FPS_Str_Raw'Last);
    begin

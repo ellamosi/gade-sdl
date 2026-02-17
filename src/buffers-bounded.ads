@@ -21,7 +21,8 @@ package Buffers.Bounded is
 
    procedure Clear (Self : out Bounded_Buffer);
 
-   procedure Set_Length (Self : in out Bounded_Buffer; Count : Natural);
+   procedure Set_Length (Self : in out Bounded_Buffer; Count : Natural)
+     with Pre => Count <= Self.Capacity or else raise Constraint_Error;
 
    function Length (Self : Bounded_Buffer) return Natural;
 

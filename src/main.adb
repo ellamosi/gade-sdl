@@ -60,6 +60,8 @@ procedure Main is
 
          Input_Reader.Poll;
 
+         --  Re-apply frame cap if FF is triggered while it was on
+         Uncapped_FPS := Uncapped_FPS and not Input_Reader.Fast_Forward;
          if not Uncapped_FPS and not Input_Reader.Fast_Forward then
             Frame_Timer.Delay_Until_Next;
          end if;

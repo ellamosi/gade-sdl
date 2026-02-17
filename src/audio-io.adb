@@ -132,7 +132,36 @@ package body Audio.IO is
       Callback  : Audio_Callback;
       User_Data : User_Data_Access;
       Device_Opened     : Boolean := False;
-      Resampler_Started : Boolean := False;
+
+      procedure Cleanup_On_Failure;
+      procedure Cleanup_On_Failure is
+      begin
+         if Device_Opened then
+            begin
+               Self.Device.Pause (True);
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Device_Opened then
+            begin
+               Self.Device.Close;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Self.Callback_Context /= null then
+            Free (Self.Callback_Context);
+            Self.Callback_Context := null;
+         end if;
+
+         Self.Is_Created := False;
+         Self.Is_Shutdown := False;
+      end Cleanup_On_Failure;
    begin
       Stats.Reset;
 
@@ -149,26 +178,13 @@ package body Audio.IO is
       Put_Debug ("Desired - Samples :" & Requested.Samples'Img);
 
       Put_Debug ("Opening Default Device");
-      begin
-         Open (Device,
-               Callback  => Callback,
-               User_Data => User_Data,
-               Desired   => Requested,
-               Obtained  => Obtained,
-               Allowed_Changes => Devices.Frequency or Devices.Samples);
-         Device_Opened := True;
-      exception
-         when E : Devices.Audio_Device_Error =>
-            Put_Info ("Audio open failed: " & Exception_Message (E));
-         Put_Info ("Audio disabled: no supported output format/device");
-         if Self.Callback_Context /= null then
-            Free (Self.Callback_Context);
-            Self.Callback_Context := null;
-         end if;
-         Self.Is_Created := False;
-         Self.Is_Shutdown := False;
-         return;
-      end;
+      Open (Device,
+            Callback  => Callback,
+            User_Data => User_Data,
+            Desired   => Requested,
+            Obtained  => Obtained,
+            Allowed_Changes => Devices.Frequency or Devices.Samples);
+      Device_Opened := True;
 
       Self.Is_Created := True;
       Self.Is_Shutdown := False;
@@ -192,44 +208,20 @@ package body Audio.IO is
       Self.Resampler.Start (Self.Callback_Context,
                             Self.Source_Ring'Unchecked_Access,
                             Self.Ring'Unchecked_Access);
-      Resampler_Started := True;
 
       Self.Device.Pause (False);
    exception
+      when E : Devices.Audio_Device_Error =>
+         if not Device_Opened then
+            Put_Info ("Audio open failed: " & Exception_Message (E));
+            Put_Info ("Audio disabled: no supported output format/device");
+            Cleanup_On_Failure;
+            return;
+         end if;
+         Cleanup_On_Failure;
+         raise;
       when others =>
-         if Device_Opened then
-            begin
-               Self.Device.Pause (True);
-            exception
-               when others =>
-                  null;
-            end;
-         end if;
-
-         if Resampler_Started then
-            begin
-               Self.Resampler.Stop;
-            exception
-               when others =>
-                  null;
-            end;
-         end if;
-
-         if Device_Opened then
-            begin
-               Self.Device.Close;
-            exception
-               when others =>
-                  null;
-            end;
-         end if;
-
-         if Self.Callback_Context /= null then
-            Free (Self.Callback_Context);
-         end if;
-
-         Self.Is_Created := False;
-         Self.Is_Shutdown := False;
+         Cleanup_On_Failure;
          raise;
    end Create;
 
