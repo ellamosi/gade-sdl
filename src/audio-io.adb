@@ -131,7 +131,8 @@ package body Audio.IO is
       Obtained : Obtained_Spec renames Self.Spec;
       Callback  : Audio_Callback;
       User_Data : User_Data_Access;
-
+      Device_Opened     : Boolean := False;
+      Resampler_Started : Boolean := False;
    begin
       Stats.Reset;
 
@@ -148,12 +149,27 @@ package body Audio.IO is
       Put_Debug ("Desired - Samples :" & Requested.Samples'Img);
 
       Put_Debug ("Opening Default Device");
+      begin
+         Open (Device,
+               Callback  => Callback,
+               User_Data => User_Data,
+               Desired   => Requested,
+               Obtained  => Obtained,
+               Allowed_Changes => Devices.Frequency or Devices.Samples);
+         Device_Opened := True;
+      exception
+         when E : Devices.Audio_Device_Error =>
+            Put_Info ("Audio open failed: " & Exception_Message (E));
+         Put_Info ("Audio disabled: no supported output format/device");
+         if Self.Callback_Context /= null then
+            Free (Self.Callback_Context);
+            Self.Callback_Context := null;
+         end if;
+         Self.Is_Created := False;
+         Self.Is_Shutdown := False;
+         return;
+      end;
 
-      Open (Device,
-            Callback  => Callback,
-            User_Data => User_Data,
-            Desired   => Requested,
-            Obtained  => Obtained);
       Self.Is_Created := True;
       Self.Is_Shutdown := False;
 
@@ -176,8 +192,47 @@ package body Audio.IO is
       Self.Resampler.Start (Self.Callback_Context,
                             Self.Source_Ring'Unchecked_Access,
                             Self.Ring'Unchecked_Access);
+      Resampler_Started := True;
 
       Self.Device.Pause (False);
+   exception
+      when others =>
+         Put_Info ("Audio.IO.Create Exception");
+         if Device_Opened then
+            begin
+               Self.Device.Pause (True);
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Resampler_Started then
+            begin
+               Self.Resampler.Stop;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Device_Opened then
+            begin
+               Self.Device.Close;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Self.Callback_Context /= null then
+            Free (Self.Callback_Context);
+            Self.Callback_Context := null;
+         end if;
+
+         Self.Is_Created := False;
+         Self.Is_Shutdown := False;
+         raise;
    end Create;
 
    task body Resampling_Task is
@@ -188,15 +243,19 @@ package body Audio.IO is
       Resampler      : Audio.Resampler.Resampler;
       Integral_Error : Float := 0.0;
    begin
-      accept Start
-        (CC          : Callback_Context_Access;
-         Source_Ring : Source_Ring_Buffer_Access;
-         Ring        : Ring_Buffer_Access)
-      do
-         Resampling_Task.CC := CC;
-         Resampling_Task.Source_Ring := Source_Ring;
-         Resampling_Task.Ring := Ring;
-      end Start;
+      select
+         accept Start
+           (CC          : Callback_Context_Access;
+            Source_Ring : Source_Ring_Buffer_Access;
+            Ring        : Ring_Buffer_Access)
+         do
+            Resampling_Task.CC := CC;
+            Resampling_Task.Source_Ring := Source_Ring;
+            Resampling_Task.Ring := Ring;
+         end Start;
+      or
+         terminate;
+      end select;
 
       Resampler.Reset
         (Float (Gade.Audio_Buffer.Samples_Second),
@@ -293,6 +352,11 @@ package body Audio.IO is
       Buffer.Set_Length (Buffer.Capacity);
       Generate (Data_Access (Buffer'Access), Frame_Count);
       Buffer.Set_Length (Frame_Count);
+
+      if not Self.Is_Created or else Self.Is_Shutdown then
+         return;
+      end if;
+
       Stats.Add_Producer_Samples (Frame_Count);
       Stats.Increment_Produced_Block;
 
@@ -327,10 +391,11 @@ package body Audio.IO is
       Self.Device.Pause (True);
       Self.Device.Close;
       Self.Resampler.Stop;
+      Stats.Report;
       if Self.Callback_Context /= null then
          Free (Self.Callback_Context);
+         Self.Callback_Context := null;
       end if;
-      Stats.Report;
       Self.Is_Shutdown := True;
    end Shutdown;
 
