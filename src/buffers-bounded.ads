@@ -22,7 +22,7 @@ package Buffers.Bounded is
    procedure Clear (Self : out Bounded_Buffer);
 
    procedure Set_Length (Self : in out Bounded_Buffer; Count : Natural)
-     with Pre => Count <= Self.Capacity or else raise Constraint_Error;
+     with Pre => Count <= Self.Capacity;
 
    function Length (Self : Bounded_Buffer) return Natural;
 
@@ -30,7 +30,7 @@ package Buffers.Bounded is
 
    procedure Append (Self : in out Bounded_Buffer; E : Element_Type)
      with
-       Pre  => Length (Self) <= Self.Capacity - 1 or else raise Constraint_Error,
+       Pre  => Length (Self) <= Self.Capacity - 1,
        Post => Length (Self)'Old + 1 = Length (Self) and then Self.Capacity >= Length (Self),
        Inline;
 

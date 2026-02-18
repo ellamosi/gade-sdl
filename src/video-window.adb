@@ -1,3 +1,5 @@
+with Ada.Strings; use Ada.Strings;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Unchecked_Conversion;
 
 with Interfaces.C; use Interfaces.C;
@@ -129,11 +131,10 @@ package body Video.Window is
      (Window : in out Window_Instance;
       FPS    :        Float)
    is
-      FPS_Int        : constant Natural := Natural (FPS);
-      FPS_Str_Raw    : constant String := FPS_Int'Image;
-      FPS_Str_Sliced : constant String := FPS_Str_Raw (2 .. FPS_Str_Raw'Last);
+      FPS_Int : constant Natural := Natural (FPS);
+      FPS_Str : constant String := Trim (FPS_Int'Image, Ada.Strings.Left);
    begin
-      Window.Window.Set_Title ("Gade (" & FPS_Str_Sliced & " fps)");
+      Window.Window.Set_Title ("Gade (" & FPS_Str & " fps)");
    end Set_FPS;
 
    overriding

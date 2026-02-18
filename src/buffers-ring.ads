@@ -7,16 +7,16 @@ package Buffers.Ring is
 
    procedure Push (Self : in out Ring_Buffer; E : Element_Type)
      with
-       Pre  => Length (Self) <= Self.Size - 1 or else raise Constraint_Error,
+       Pre  => Length (Self) <= Self.Size - 1,
        Post => Length (Self)'Old + 1 = Length (Self) and then Self.Size >= Length (Self);
 
    procedure Pop (Self : in out Ring_Buffer; E : out Element_Type)
      with
-       Pre  => Length (Self) > 0 or else raise Constraint_Error,
+       Pre  => Length (Self) > 0,
        Post => Length (Self)'Old - 1 = Length (Self);
 
    function Peek (Self : Ring_Buffer) return Element_Type
-     with Pre => Length (Self) > 0 or else raise Constraint_Error;
+     with Pre => Length (Self) > 0;
 
    function Length (Self : Ring_Buffer) return Natural;
 

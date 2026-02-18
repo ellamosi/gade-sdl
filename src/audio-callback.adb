@@ -1,5 +1,5 @@
-with Ada.Text_IO;
 with Ada.Exceptions; use Ada.Exceptions;
+with SDL.Log;
 
 package body Audio.Callback is
 
@@ -86,8 +86,7 @@ package body Audio.Callback is
       end if;
    exception
       when E : others =>
-         Ada.Text_IO.Put_Line ("Callback Exception");
-         Ada.Text_IO.Put_Line (Exception_Message (E));
+         SDL.Log.Put_Error ("Callback Exception: " & Exception_Message (E));
    end SDL_Callback;
 
    procedure Write_Silence (Buffer : out Bounded_Float_Buffers.Data_Container) is

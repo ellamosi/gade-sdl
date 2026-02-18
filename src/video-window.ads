@@ -21,7 +21,7 @@ package Video.Window is
    procedure Set_FPS
      (Window : in out Window_Instance;
       FPS    : Float)
-      with Pre => FPS >= 0.0 or else raise Constraint_Error;
+      with Pre => FPS >= 0.0;
 
    overriding
    procedure Finalize (Window : in out Window_Instance);

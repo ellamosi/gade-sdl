@@ -3,7 +3,6 @@ with SDL.Log; use SDL.Log;
 with Interfaces;
 with Interfaces.C;
 
-with Ada.Text_IO;
 with Ada.Exceptions; use Ada.Exceptions;
 with Ada.Unchecked_Deallocation;
 
@@ -329,8 +328,7 @@ package body Audio.IO is
       end loop;
    exception
       when E : others =>
-         Ada.Text_IO.Put_Line ("Resampling Task Exception");
-         Ada.Text_IO.Put_Line (Exception_Message (E));
+         SDL.Log.Put_Error ("Resampling Task Exception: " & Exception_Message (E));
    end Resampling_Task;
 
    procedure Queue_Asynchronously (Self : in out Instance) is
