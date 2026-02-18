@@ -8,23 +8,23 @@ with Audio.IO;            use Audio.IO;
 with Runtime.Main_Loop;        use Runtime.Main_Loop;
 with Video.Window;        use Video.Window;
 with Input;
-with Cli;
+with CLI;
 with Runtime.Frame_Pacing;
 
 with SDL.Log; use SDL.Log;
+with SDL.Error;
 
 with Ada.Exceptions; use Ada.Exceptions;
 
 procedure Main is
-
-   G        : Gade_Type;
-   Window   : Window_Instance;
-   Audio_IO : Audio.IO.Instance;
-   Input_Reader : aliased Input.Instance;
-   Runner   : Runtime.Main_Loop.Instance;
-   Args     : Cli.Instance;
-
-   Uncapped_FPS : Boolean;
+   G               : Gade_Type;
+   Window          : Window_Instance;
+   Audio_IO        : Audio.IO.Instance;
+   Input_Reader    : aliased Input.Instance;
+   Runner          : Runtime.Main_Loop.Instance;
+   Args            : CLI.Instance;
+   SDL_Initialized : Boolean := False;
+   Uncapped_FPS    : Boolean;
 
    procedure Display_FPS (Value : Float);
    procedure Display_FPS (Value : Float) is
@@ -67,14 +67,30 @@ procedure Main is
          end if;
       end loop;
    end Render_Loop;
+
+   procedure Cleanup_Runtime;
+   procedure Cleanup_Runtime is
+   begin
+      if SDL_Initialized then
+         --  Local resources are controlled and will get automatically finalized
+         Shutdown (Audio_IO);
+         Shutdown (Window);
+         SDL.Finalise;
+         SDL_Initialized := False;
+      end if;
+   end Cleanup_Runtime;
 begin
-   if not SDL.Initialise then raise Program_Error; end if;
+   if not SDL.Initialise then
+      Ada.Text_IO.Put_Line ("SDL initialization failed: " & SDL.Error.Get);
+      return;
+   end if;
+   SDL_Initialized := True;
 
-   Cli.Parse (Args);
+   CLI.Parse (Args);
 
-   SDL.Log.Set (Category => SDL.Log.Application, Priority => Cli.Log_Priority (Args));
+   SDL.Log.Set (Category => SDL.Log.Application, Priority => CLI.Log_Priority (Args));
 
-   Uncapped_FPS := Cli.Uncapped_FPS (Args);
+   Uncapped_FPS := CLI.Uncapped_FPS (Args);
 
    Create (Window);
    Create (Audio_IO);
@@ -87,8 +103,8 @@ begin
    Set_Input_Reader (G, Input_Reader'Access);
 
    while not Input_Reader.Quit loop
-      if Cli.ROM_Filename (Args) /= "" then
-         Render_Loop (Cli.ROM_Filename (Args));
+      if CLI.ROM_Filename (Args) /= "" then
+         Render_Loop (CLI.ROM_Filename (Args));
       elsif Input_Reader.File_Dropped then
          declare
             Filename : constant String := Input_Reader.Dropped_Filename;
@@ -101,13 +117,10 @@ begin
       end if;
    end loop;
 
-   --  Local resources are controlled and will get automatically finalized
-
-   Shutdown (Audio_IO);
-   Shutdown (Window);
-   SDL.Finalise;
+   Cleanup_Runtime;
 exception
    when E : others =>
+      Cleanup_Runtime;
       Ada.Text_IO.Put_Line ("Main Thread Exception");
       Ada.Text_IO.Put_Line (Exception_Message (E));
       Ada.Text_IO.Put_Line (GNAT.Traceback.Symbolic.Symbolic_Traceback (E));

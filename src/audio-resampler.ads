@@ -5,7 +5,8 @@ private package Audio.Resampler is
    procedure Reset
      (Self             : in out Resampler;
       Input_Frequency  : Float;
-      Output_Frequency : Float);
+      Output_Frequency : Float)
+      with Pre => Input_Frequency > 0.0 and Output_Frequency > 0.0;
 
    procedure Resample
      (Self   : in out Resampler;
@@ -14,7 +15,8 @@ private package Audio.Resampler is
 
    procedure Set_Input_Frequency
      (Self            : in out Resampler;
-      Input_Frequency : Float);
+      Input_Frequency : Float)
+      with Pre => Input_Frequency > 0.0;
 
 private
 

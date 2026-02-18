@@ -1,7 +1,7 @@
 with GNAT.Command_Line; use GNAT.Command_Line;
 with GNAT.Strings;
 
-package body Cli is
+package body CLI is
 
    procedure Parse (Command_Line : out Instance) is
       Config           : Command_Line_Configuration;
@@ -68,4 +68,4 @@ package body Cli is
       return To_String (Command_Line.ROM_Filename);
    end ROM_Filename;
 
-end Cli;
+end CLI;
