@@ -1,6 +1,7 @@
-with Gade.Interfaces;   use Gade.Interfaces;
-with Video.Window;       use Video.Window;
 with Audio.IO;
+with Video.Window; use Video.Window;
+
+with Gade.Interfaces; use Gade.Interfaces;
 with Gade.Video_Buffer; use Gade.Video_Buffer;
 
 with SDL.Timers; use SDL.Timers;
