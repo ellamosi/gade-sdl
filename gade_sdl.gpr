@@ -1,84 +1,44 @@
 with "../libgade/gade.gpr";
-with "../sdlada-2.1.8/build/gnat/sdlada.gpr";
+with "../sdlada/build/gnat/sdlada.gpr";
 
 project Gade_SDL is
 
-   type Mode_Type1 is
-      ("debug", "release"); --  all possible values
-   type Platform_Type is
-      ("linux", "bsd", "windows", "macosx", "ios", "android");
    type Mode_Type is
-      ("debug", "release");
-   type Build_Type is
-     ("static", "shared");
+      ("debug", "release"); --  all possible values
    for Create_Missing_Dirs use "True";
    for Object_Dir use "../obj/gade_sdl";
    for Exec_Dir use "../bin";
-   for Source_Dirs use (".");
-   SDL_BUILD : Build_Type := external ("SDL_BUILD");
-   SDL_MODE : Mode_Type := external ("SDL_MODE");
-   SDL_PLATFORM : Platform_Type := external ("SDL_PLATFORM");
-   Mode : Mode_Type1 := external ("mode");
+   for Source_Dirs use ("src");
+
+   SDL_MODE : SDLAda.Mode_Type := external ("SDL_MODE");
+   SDL_PLATFORM : SDLAda.Platform_Type := external ("SDL_PLATFORM");
+   Mode : Mode_Type := external ("mode");
 
    package Naming renames Gade.Naming;
 
    package Builder is
-      for Executable ("gade_main.adb") use "gade";
+      for Executable ("main.adb") use "gade";
       for Default_Switches ("ada") use Gade.Builder'Default_Switches ("Ada") & ("-C", "-s");
    end Builder;
 
    package Linker is
-      for Default_Switches ("ada") use Gade.Linker'Default_Switches ("Ada") & ("-F/Library/Frameworks", "-framework", "SDL2");
+      case SDL_PLATFORM is
+         when "macosx" =>
+            for Default_Switches ("ada") use
+              Gade.Linker'Default_Switches ("Ada") & ("-L/usr/local/lib",
+                                                      "-mmacosx-version-min=12.0",
+                                                      "-F/Library/Frameworks",
+                                                      "-framework", "SDL2");
+         when others =>
+            for Default_Switches ("ada") use
+              Gade.Linker'Default_Switches ("Ada") & ("-lSDL2");
+      end case;
    end Linker;
 
    package Compiler renames Gade.Compiler;
 
    package Pretty_Printer renames Gade.Pretty_Printer;
 
-   case SDL_BUILD is
-
-      when "static" =>
-
-         case SDL_MODE is
-
-            when "debug" =>
-
-               case SDL_PLATFORM is
-
-                  when "linux" =>
-
-                     case Mode is
-
-                        when "debug" =>
-                           for Main use ("Gade_Main.adb");
-
-                        when "release" =>
-                           for Main use ("Gade_Main.adb");
-                     end case;
-
-                  when "bsd" =>
-                     for Main use ("Gade_Main.adb");
-
-                  when "windows" =>
-                     for Main use ("Gade_Main.adb");
-
-                  when "macosx" =>
-                     for Main use ("Gade_Main.adb");
-
-                  when "ios" =>
-                     for Main use ("Gade_Main.adb");
-
-                  when "android" =>
-                     for Main use ("Gade_Main.adb");
-               end case;
-
-            when "release" =>
-               for Main use ("Gade_Main.adb");
-         end case;
-
-      when "shared" =>
-         for Main use ("Gade_Main.adb");
-   end case;
+   for Main use ("main.adb");
 
 end Gade_SDL;
-

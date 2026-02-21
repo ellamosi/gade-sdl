@@ -1,0 +1,38 @@
+private package Audio.Resampler is
+
+   type Resampler is tagged private;
+
+   procedure Reset
+     (Self             : in out Resampler;
+      Input_Frequency  : Float;
+      Output_Frequency : Float)
+      with Pre => Input_Frequency > 0.0 and Output_Frequency > 0.0;
+
+   procedure Resample
+     (Self   : in out Resampler;
+      Input  : Stereo_Sample_Buffer;
+      Output : in out Circular_Float_Buffers.Ring_Buffer);
+
+   procedure Set_Input_Frequency
+     (Self            : in out Resampler;
+      Input_Frequency : Float)
+      with Pre => Input_Frequency > 0.0;
+
+private
+
+   type Frame_History is array (0 .. 3) of Float_Frame;
+
+   type Resampler is tagged record
+      History          : Frame_History;
+      Ratio            : Float;
+      Fraction         : Float;
+      Input_Frequency  : Float;
+      Output_Frequency : Float;
+   end record;
+
+   procedure Resample
+     (Self   : in out Resampler;
+      Frame  : Stereo_Sample;
+      Output : in out Circular_Float_Buffers.Ring_Buffer);
+
+end Audio.Resampler;

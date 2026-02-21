@@ -1,0 +1,39 @@
+package body Buffers.Ring is
+
+   procedure Push (Self : in out Ring_Buffer; E : Element_Type) is
+   begin
+      Self.Data (Self.Write_Index) := E;
+      Self.Write_Index := Self.Write_Index + 1;
+      Self.Count := Self.Count + 1;
+      if Self.Write_Index > Self.Size then Self.Write_Index := 1; end if;
+   end Push;
+
+   procedure Pop (Self : in out Ring_Buffer; E : out Element_Type) is
+   begin
+      E := Self.Data (Self.Read_Index);
+      Self.Read_Index := Self.Read_Index + 1;
+      Self.Count := Self.Count - 1;
+      if Self.Read_Index > Self.Size then Self.Read_Index := 1; end if;
+   end Pop;
+
+   function Peek (Self : Ring_Buffer) return Element_Type is
+   begin
+      return Self.Data (Self.Read_Index);
+   end Peek;
+
+   function Length (Self : Ring_Buffer) return Natural is
+   begin
+      return Self.Count;
+   end Length;
+
+   function Is_Empty (Self : Ring_Buffer) return Boolean is
+   begin
+      return Self.Length = 0;
+   end Is_Empty;
+
+   function Available (Self : Ring_Buffer) return Natural is
+   begin
+      return Self.Size - Self.Length;
+   end Available;
+
+end Buffers.Ring;
