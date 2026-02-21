@@ -120,17 +120,20 @@ package body Audio.IO is
    end Clamp;
 
    procedure Create (Self : aliased out Instance) is
-      Device   : Devices.Device renames Self.Device;
+      Device : Devices.Device renames Self.Device;
+
       Requested : constant Desired_Spec :=
         (Mode      => Desired,
          Frequency => Interfaces.C.int (Desired_Output_Frequency),
          Format    => Sample_Format,
          Channels  => Desired_Channel_Count,
          Samples   => Interfaces.Unsigned_16 (Desired_Callback_Frames));
-      Obtained : Obtained_Spec renames Self.Spec;
+      Obtained  : Obtained_Spec renames Self.Spec;
+
       Callback  : Audio_Callback;
       User_Data : User_Data_Access;
-      Device_Opened     : Boolean := False;
+
+      Device_Opened : Boolean := False;
 
       procedure Cleanup_On_Failure;
       procedure Cleanup_On_Failure is
@@ -147,6 +150,15 @@ package body Audio.IO is
          if Device_Opened then
             begin
                Self.Device.Close;
+            exception
+               when others =>
+                  null;
+            end;
+         end if;
+
+         if Self.Is_Created and then not Self.Is_Shutdown then
+            begin
+               Self.Resampler.Stop;
             exception
                when others =>
                   null;
@@ -185,9 +197,6 @@ package body Audio.IO is
             Allowed_Changes => Devices.Frequency or Devices.Samples);
       Device_Opened := True;
 
-      Self.Is_Created := True;
-      Self.Is_Shutdown := False;
-
       Put_Debug ("Opened Device:" & Device.Get_ID'Img);
       Put_Debug ("Device Status: " & Device.Get_Status'Img);
 
@@ -207,6 +216,8 @@ package body Audio.IO is
       Self.Resampler.Start (Self.Callback_Context,
                             Self.Source_Ring'Unchecked_Access,
                             Self.Ring'Unchecked_Access);
+      Self.Is_Created := True;
+      Self.Is_Shutdown := False;
 
       Self.Device.Pause (False);
    exception

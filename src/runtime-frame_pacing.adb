@@ -38,8 +38,8 @@ package body Runtime.Frame_Pacing is
       FPS           : Float;
    begin
       Self.Frame_Count := Self.Frame_Count + 1;
-      if Now_Ticks > Self.Next_Update then
-         Sampled_Ticks := Now_Ticks - Self.Last_Update;
+      Sampled_Ticks := Now_Ticks - Self.Last_Update;
+      if Sampled_Ticks > 0 then
          FPS := Float (Self.Frame_Count * 1000) / Float (Sampled_Ticks);
          Display_FPS (FPS);
 
