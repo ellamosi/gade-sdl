@@ -111,19 +111,24 @@ package body Video.Window is
 
    procedure Render_Frame (Window : in out Window_Instance) is
       Pixel_Pointer : SDL.Video.Pixels.ARGB_8888_Access.Pointer;
+      Texture_Locked : Boolean := False;
    begin
       SDL_Texture_Lock (Window.Texture, Pixel_Pointer);
+      Texture_Locked := True;
       Generate_Frame
         (To_Public_RGB32_Display_Buffer_Access
            (ARGB_8888_Pointer_To_RGB32_Display_Buffer_Access (Pixel_Pointer)));
       SDL.Video.Textures.Unlock (Window.Texture);
+      Texture_Locked := False;
 
       SDL.Video.Renderers.Clear (Window.Renderer);
       SDL.Video.Renderers.Copy (Window.Renderer, Window.Texture);
       SDL.Video.Renderers.Present (Window.Renderer);
    exception
       when others =>
-         SDL.Video.Textures.Unlock (Window.Texture);
+         if Texture_Locked then
+            SDL.Video.Textures.Unlock (Window.Texture);
+         end if;
          raise;
    end Render_Frame;
 

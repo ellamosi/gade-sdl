@@ -29,7 +29,8 @@ package Buffers.Transactional_Ring is
 
    procedure Push
      (C : in out Write_Cursor;
-      E : Element_Type);
+      E : Element_Type)
+      with Pre => Has_Element (C);
 
    procedure Commit_Write (C : Write_Cursor);
    --  Must commit the same cursor returned by Begin_Write before issuing
@@ -41,7 +42,8 @@ package Buffers.Transactional_Ring is
 
    procedure Pop
      (C : in out Read_Cursor;
-      E : out Element_Type);
+      E : out Element_Type)
+      with Pre => Has_Element (C);
 
    procedure Commit_Read (C : Read_Cursor);
    --  Must commit the same cursor returned by Begin_Read before issuing
