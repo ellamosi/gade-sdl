@@ -56,7 +56,8 @@ package body Runtime.Main_Loop is
       Audio_IO     : in out Audio.IO.Instance)
    is
       --  Run_For may generate more samples than requested.
-      Requested_Samples : constant Natural := Producer_Chunk_Samples - 16;
+      Requested_Samples : constant Natural :=
+        Producer_Chunk_Samples - Run_For_Sample_Margin;
       --  Audio samples generated for the current queued block.
       Actual_Samples    : Natural;
       Frame_Finished    : Boolean := False;

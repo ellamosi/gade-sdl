@@ -8,6 +8,7 @@ with SDL.Timers; use SDL.Timers;
 package Runtime.Main_Loop is
 
    Producer_Chunk_Samples   : constant Natural := 2_048;
+   Run_For_Sample_Margin    : constant Natural := 16;
 
    type Instance is limited private;
 
