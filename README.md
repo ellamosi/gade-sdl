@@ -6,7 +6,7 @@ A [SDL](https://www.libsdl.org/) front end in Ada for [libgade](https://github.c
 
 ## Dependencies
 
-- GNAT Ada 2019 toolchain
+- Alire
 - [libgade](https://github.com/ellamosi/libgade) (sibling project dependency)
 - [SDLAda](https://github.com/ada-game-framework/sdlada) (sibling project dependency)
   - Which in turn depends on SDL2
@@ -17,17 +17,18 @@ A [SDL](https://www.libsdl.org/) front end in Ada for [libgade](https://github.c
 
 This setup has been tested only on macOS 12 so far.
 
-From the repository root:
+From this repository directory (`gade_sdl`):
 
 ```sh
-gprbuild -P gade_sdl/gade_sdl.gpr \
-  -XSDL_MODE=debug \
-  -XSDL_PLATFORM=macosx \
-  -Xmode=debug \
-  -j0
+alr build
 ```
 
 The executable is generated at `bin/gade`.
+
+This Alire migration keeps local sibling dependencies through GPR:
+
+- `../libgade/gade.gpr`
+- `../sdlada/build/gnat/sdlada.gpr`
 
 ### Run
 
