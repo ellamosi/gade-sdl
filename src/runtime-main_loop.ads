@@ -23,7 +23,7 @@ package Runtime.Main_Loop is
 private
 
    type Instance is record
-      Last_Frame_Rendered_Ticks : Milliseconds_Long;
+      Last_Frame_Rendered_Ticks : Milliseconds;
    end record;
 
    procedure Generate_And_Render

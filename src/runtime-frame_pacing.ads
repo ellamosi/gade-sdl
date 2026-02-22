@@ -14,23 +14,23 @@ package Runtime.Frame_Pacing is
 
 private
 
-   Ticks_Per_FPS_Sample : constant SDL.Timers.Milliseconds_Long := 1000;
+   Ticks_Per_FPS_Sample : constant SDL.Timers.Milliseconds := 1000;
 
    type FPS_Sampler is tagged record
       Frame_Count : Natural;
-      Next_Update : Milliseconds_Long;
-      Last_Update : Milliseconds_Long;
+      Next_Update : Milliseconds;
+      Last_Update : Milliseconds;
    end record;
 
    procedure Reset (Self      : out FPS_Sampler;
-                    Now_Ticks : Milliseconds_Long);
+                    Now_Ticks : Milliseconds);
 
    procedure Sample_Frame (Self      : in out FPS_Sampler;
-                           Now_Ticks : Milliseconds_Long);
+                           Now_Ticks : Milliseconds);
 
    type Frame_Timer is tagged record
       FPS_Sampler : Runtime.Frame_Pacing.FPS_Sampler;
-      Frame_Ticks : Milliseconds_Long;
+      Frame_Ticks : Milliseconds;
    end record;
 
 end Runtime.Frame_Pacing;
