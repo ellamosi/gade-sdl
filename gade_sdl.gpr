@@ -1,5 +1,5 @@
 with "../libgade/gade.gpr";
-with "../sdlada/build/gnat/sdlada.gpr";
+with "sdlada";
 
 project Gade_SDL is
 

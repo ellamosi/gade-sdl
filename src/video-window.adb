@@ -12,21 +12,19 @@ with SDL.Video.Pixels;
 with SDL.Log; use SDL.Log;
 
 package body Video.Window is
-   use type SDL.Video.Renderers.Driver_Indices;
-
-   Default_Renderer_Driver : constant SDL.Video.Renderers.Driver_Indices := -1;
+   Default_Renderer_Driver : constant Integer := -1;
    --  Preferred renderer driver on MacOS for sharper scaling in this setup.
-   Cocoa_Renderer_Driver : constant SDL.Video.Renderers.Driver_Indices := 1;
+   Cocoa_Renderer_Driver : constant Integer := 1;
 
    procedure Create_Renderer
      (Window         : in out Window_Instance;
       Created        : out Boolean;
-      Driver         : SDL.Video.Renderers.Driver_Indices := Default_Renderer_Driver;
+      Driver         : Integer := Default_Renderer_Driver;
       Raise_On_Error : Boolean := False);
    procedure Create_Renderer
      (Window         : in out Window_Instance;
       Created        : out Boolean;
-      Driver         : SDL.Video.Renderers.Driver_Indices := Default_Renderer_Driver;
+      Driver         : Integer := Default_Renderer_Driver;
       Raise_On_Error : Boolean := False)
    is
    begin

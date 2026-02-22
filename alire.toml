@@ -25,10 +25,5 @@ linux = { SDL_PLATFORM = "linux" }
 windows = { SDL_PLATFORM = "windows" }
 macos = { SDL_PLATFORM = "macosx" }
 
-[[actions]]
-type = "pre-build"
-command = [
-  "sh",
-  "-c",
-  "SDKROOT=\"${SDKROOT:-$(xcrun --show-sdk-path)}\"; cd ../sdlada/build/gnat && gprbuild -p -XSDL_MODE=debug -XSDL_PLATFORM=macosx -Ptools.gpr -largs -Wl,-syslibroot,$SDKROOT -largs -L$SDKROOT/usr/lib && mkdir -p gen/src && ./gen/debug/tools/gen_keyboard > gen/src/sdl-events-keyboards.ads"
-]
+[[depends-on]]
+sdlada = "^2.5.20"

@@ -6,14 +6,14 @@ package body Runtime.Frame_Pacing is
    end Reset;
 
    procedure Time_Frame (Self : in out Frame_Timer) is
-      Now_Ticks : constant Milliseconds_Long := SDL.Timers.Ticks;
+      Now_Ticks : constant Milliseconds := SDL.Timers.Ticks;
    begin
       Self.FPS_Sampler.Sample_Frame (Now_Ticks);
       Self.Frame_Ticks := Now_Ticks;
    end Time_Frame;
 
    procedure Delay_Until_Next (Self : in out Frame_Timer) is
-      Busy_Ticks : constant Milliseconds_Long := SDL.Timers.Ticks - Self.Frame_Ticks;
+      Busy_Ticks : constant Milliseconds := SDL.Timers.Ticks - Self.Frame_Ticks;
    begin
       if Busy_Ticks < Ticks_Per_Frame then
          SDL.Timers.Wait_Delay (Ticks_Per_Frame - Busy_Ticks);
@@ -22,7 +22,7 @@ package body Runtime.Frame_Pacing is
 
    procedure Reset
      (Self      : out Runtime.Frame_Pacing.FPS_Sampler;
-      Now_Ticks : Milliseconds_Long)
+      Now_Ticks : Milliseconds)
    is
    begin
       Self.Last_Update := Now_Ticks;
@@ -32,9 +32,9 @@ package body Runtime.Frame_Pacing is
 
    procedure Sample_Frame
      (Self      : in out Runtime.Frame_Pacing.FPS_Sampler;
-      Now_Ticks : Milliseconds_Long)
+      Now_Ticks : Milliseconds)
    is
-      Sampled_Ticks : Milliseconds_Long;
+      Sampled_Ticks : Milliseconds;
       FPS           : Float;
    begin
       Self.Frame_Count := Self.Frame_Count + 1;

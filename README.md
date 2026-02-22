@@ -8,7 +8,7 @@ A [SDL](https://www.libsdl.org/) front end in Ada for [libgade](https://github.c
 
 - Alire
 - [libgade](https://github.com/ellamosi/libgade) (sibling project dependency)
-- [SDLAda](https://github.com/ada-game-framework/sdlada) (sibling project dependency)
+- [SDLAda](https://github.com/ada-game-framework/sdlada) (Alire crate dependency)
   - Which in turn depends on SDL2
 
 ## Usage
@@ -25,10 +25,9 @@ alr build
 
 The executable is generated at `bin/gade`.
 
-This Alire migration keeps local sibling dependencies through GPR:
+This Alire migration keeps `libgade` as a local sibling dependency through GPR:
 
 - `../libgade/gade.gpr`
-- `../sdlada/build/gnat/sdlada.gpr`
 
 ### Run
 
