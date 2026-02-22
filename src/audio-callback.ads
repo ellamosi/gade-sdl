@@ -1,7 +1,7 @@
 private package Audio.Callback is
    use Devices;
 
-   type Callback_Context is tagged limited private;
+   type Callback_Context is tagged private;
 
    type Callback_Context_Access is access all Callback_Context;
 
@@ -26,7 +26,7 @@ private package Audio.Callback is
 private
    Default_Output_Frequency : constant Positive := 48_000;
 
-   type Callback_Context is limited new Devices.User_Data with record
+   type Callback_Context is new Devices.User_Data with record
       Output_Ring      : Ring_Buffer_Access;
       Margin_Frames    : Positive := 1;
       Margin_Low       : Natural := 0;

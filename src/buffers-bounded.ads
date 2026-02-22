@@ -94,7 +94,7 @@ private
 
    type Bounded_Buffer (Capacity : Positive) is tagged record
       Data  : aliased Data_Container (1 .. Capacity);
-      Slice : aliased Bounds := (1, 0);
+      Slice : aliased Bounds := [1, 0];
    end record;
 
    type Cursor is record

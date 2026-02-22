@@ -6,7 +6,7 @@ package body Audio.Resampler is
       Output_Frequency : Float)
    is
    begin
-      Self.History          := (others => (0.0, 0.0));
+      Self.History          := [others => (0.0, 0.0)];
       Self.Input_Frequency  := Input_Frequency;
       Self.Output_Frequency := Output_Frequency;
       Self.Ratio            := Input_Frequency / Output_Frequency;

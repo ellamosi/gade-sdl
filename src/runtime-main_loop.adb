@@ -13,7 +13,7 @@ package body Runtime.Main_Loop is
       Window   : in out Window_Instance;
       Audio_IO : in out Audio.IO.Instance)
    is
-      Ticks : constant Milliseconds := SDL.Timers.Ticks;
+      Ticks : constant Milliseconds_Long := SDL.Timers.Ticks;
    begin
       if Ticks - Runner.Last_Frame_Rendered_Ticks >= Ticks_Per_Frame then
          Generate_And_Render (G, Window, Audio_IO);
