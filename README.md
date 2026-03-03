@@ -25,9 +25,10 @@ alr build
 
 The executable is generated at `bin/gade`.
 
-This Alire migration keeps `libgade` as a local sibling dependency through GPR:
+This Alire setup keeps `gade` as a local sibling dependency via manifest pinning:
 
-- `../libgade/gade.gpr`
+- `[[depends-on]] gade = "*"`
+- `[[pins]] gade = { path = "../libgade" }`
 
 ### Run
 

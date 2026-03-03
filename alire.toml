@@ -28,6 +28,12 @@ macos = { SDL_PLATFORM = "macosx" }
 [[depends-on]]
 sdlada = "^2.5.20"
 
+[[depends-on]]
+gade = "*"
+
+[[pins]]
+gade = { path = "../libgade" }
+
 [environment.'case(os)'.macos.SDKROOT]
 set = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 

@@ -12,5 +12,8 @@ gnatinspect.db
 
 # OS files
 .DS_Store
+.vscode/
+obj/
+bin/
 alire/
 config/
