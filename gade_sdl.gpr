@@ -18,17 +18,20 @@ project Gade_SDL is
 
    package Builder is
       for Executable ("main.adb") use "gade";
+      --  Reuse shared builder flags from gade and keep frontend-specific flags.
       for Default_Switches ("ada") use Gade.Builder'Default_Switches ("Ada") & ("-C", "-s");
    end Builder;
 
    package Linker is
       case SDL_PLATFORM is
          when "macosx" =>
+            --  Link against framework-based SDL2 installations on macOS.
             for Default_Switches ("ada") use
               ("-L/usr/local/lib",
                "-F/Library/Frameworks",
                "-framework", "SDL2");
          when others =>
+            --  Link against the conventional Unix SDL2 library name.
             for Default_Switches ("ada") use
               ("-lSDL2");
       end case;
