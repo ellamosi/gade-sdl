@@ -14,7 +14,7 @@ package Runtime.Frame_Pacing is
 
 private
 
-   Ticks_Per_FPS_Sample : constant := 1000;
+   Ticks_Per_FPS_Sample : constant SDL.Timers.Milliseconds := 1000;
 
    type FPS_Sampler is tagged record
       Frame_Count : Natural;

@@ -1,0 +1,35 @@
+name = "gade_sdl"
+description = "SDL frontend for libgade"
+version = "0.1.0-dev"
+
+authors = ["ellamosi"]
+maintainers = ["ellamosi <ellamosi@users.noreply.github.com>"]
+maintainers-logins = ["ellamosi"]
+licenses = "GPL-3.0-or-later"
+website = "https://github.com/ellamosi/gade_sdl"
+tags = ["ada", "gameboy", "emulator", "sdl"]
+
+project-files = ["gade_sdl.gpr"]
+
+[gpr-externals]
+mode = ["debug", "release"]
+SDL_MODE = ["debug", "release"]
+SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "ios", "android"]
+
+[gpr-set-externals]
+mode = "debug"
+SDL_MODE = "debug"
+
+[gpr-set-externals.'case(os)']
+linux = { SDL_PLATFORM = "linux" }
+windows = { SDL_PLATFORM = "windows" }
+macos = { SDL_PLATFORM = "macosx" }
+
+[[depends-on]]
+sdlada = "^2.5.20"
+
+[[depends-on]]
+gade = "*"
+
+[[pins]]
+gade = { path = "../libgade" }

@@ -91,7 +91,7 @@ package body Audio.Callback is
 
    procedure Write_Silence (Buffer : out Bounded_Float_Buffers.Data_Container) is
    begin
-      Buffer := (others => (0.0, 0.0));
+      Buffer := [others => (0.0, 0.0)];
    end Write_Silence;
 
    function Output_Frequency (Context : Callback_Context) return Positive

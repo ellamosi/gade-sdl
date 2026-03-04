@@ -12,7 +12,6 @@ package body Input is
       Input.Quit := False;
       Input.Fast_Forward := False;
       Input.File := Null_Unbounded_String;
-      SDL.Events.Set_Enabled (SDL.Events.Files.Drop_File, True);
    end Create;
 
    overriding
