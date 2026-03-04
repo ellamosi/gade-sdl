@@ -2,12 +2,12 @@
 
 ![Gade SDL on macOS](docs/assets/gade-sdl-macos-window.png)
 
-A [SDL](https://www.libsdl.org/) front end in Ada for [libgade](https://github.com/ellamosi/libgade), intended as an easily portable reference implementation.
+A [SDL](https://www.libsdl.org/) front end in Ada for [gade](https://github.com/ellamosi/gade), intended as an easily portable reference implementation.
 
 ## Dependencies
 
 - Alire
-- [libgade](https://github.com/ellamosi/libgade) (sibling project dependency)
+- [gade](https://github.com/ellamosi/gade) (sibling project dependency)
 - [SDLAda](https://github.com/ada-game-framework/sdlada) (Alire crate dependency)
   - Which in turn depends on SDL2
 
@@ -28,7 +28,7 @@ The executable is generated at `bin/gade`.
 This Alire setup keeps `gade` as a local sibling dependency via manifest pinning:
 
 - `[[depends-on]] gade = "*"`
-- `[[pins]] gade = { path = "../libgade" }`
+- `[[pins]] gade = { path = "../gade" }`
 
 ### Run
 

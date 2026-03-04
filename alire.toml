@@ -1,5 +1,5 @@
 name = "gade_sdl"
-description = "SDL frontend for libgade"
+description = "SDL frontend for gade"
 version = "0.1.0-dev"
 
 authors = ["ellamosi"]
@@ -32,4 +32,4 @@ sdlada = "^2.5.20"
 gade = "*"
 
 [[pins]]
-gade = { path = "../libgade" }
+gade = { path = "../gade" }

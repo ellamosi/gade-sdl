@@ -97,7 +97,7 @@ begin
    Input.Create (Input_Reader);
    Create (Runner);
 
-   Put_Debug ("Initializing libgade");
+   Put_Debug ("Initializing gade");
    Create (G);
    Put_Debug ("Setting up input handling");
    Set_Input_Reader (G, Input_Reader'Access);
