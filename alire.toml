@@ -33,15 +33,3 @@ gade = "*"
 
 [[pins]]
 gade = { path = "../libgade" }
-
-[environment.'case(os)'.macos.SDKROOT]
-set = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
-
-[environment.'case(os)'.macos.LIBRARY_PATH]
-append = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-
-[environment.'case(os)'.macos.CPATH]
-append = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
-
-[environment.'case(os)'.macos.C_INCLUDE_PATH]
-append = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"

@@ -13,9 +13,6 @@ project Gade_SDL is
    SDL_MODE : SDLAda.Mode_Type := external ("SDL_MODE");
    SDL_PLATFORM : SDLAda.Platform_Type := external ("SDL_PLATFORM");
    Mode : Mode_Type := external ("mode");
-   SDK_Root :=
-     external ("SDKROOT",
-               "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk");
 
    package Naming renames Gade.Naming;
 
@@ -29,8 +26,6 @@ project Gade_SDL is
          when "macosx" =>
             for Default_Switches ("ada") use
               ("-L/usr/local/lib",
-               "-Wl,-syslibroot," & SDK_Root,
-               "-L" & SDK_Root & "/usr/lib",
                "-F/Library/Frameworks",
                "-framework", "SDL2");
          when others =>
