@@ -1,12 +1,12 @@
 name = "gade_sdl"
-description = "SDL frontend for libgade"
+description = "SDL frontend for gade"
 version = "0.1.0-dev"
 
 authors = ["ellamosi"]
 maintainers = ["ellamosi <ellamosi@users.noreply.github.com>"]
 maintainers-logins = ["ellamosi"]
 licenses = "GPL-3.0-or-later"
-website = "https://github.com/ellamosi/gade_sdl"
+website = "https://github.com/ellamosi/gade-sdl"
 tags = ["ada", "gameboy", "emulator", "sdl"]
 
 project-files = ["gade_sdl.gpr"]
@@ -14,16 +14,23 @@ project-files = ["gade_sdl.gpr"]
 [gpr-externals]
 mode = ["debug", "release"]
 SDL_MODE = ["debug", "release"]
-SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "ios", "android"]
+SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports", "ios", "android"]
+GADE_LIBRARY_TYPE = ["relocatable", "static", "static-pic"]
 
 [gpr-set-externals]
 mode = "debug"
 SDL_MODE = "debug"
+GADE_LIBRARY_TYPE = "static"
 
 [gpr-set-externals.'case(os)']
 linux = { SDL_PLATFORM = "linux" }
 windows = { SDL_PLATFORM = "windows" }
 macos = { SDL_PLATFORM = "macosx" }
+
+[environment."case(os)".macos]
+C_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
+CPLUS_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
+LIBRARY_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
 
 [[depends-on]]
 sdlada = "^2.5.20"
@@ -32,4 +39,4 @@ sdlada = "^2.5.20"
 gade = "*"
 
 [[pins]]
-gade = { path = "../libgade" }
+gade = { path = "../gade" }
