@@ -6,7 +6,7 @@ authors = ["ellamosi"]
 maintainers = ["ellamosi <ellamosi@users.noreply.github.com>"]
 maintainers-logins = ["ellamosi"]
 licenses = "GPL-3.0-or-later"
-website = "https://github.com/ellamosi/gade_sdl"
+website = "https://github.com/ellamosi/gade-sdl"
 tags = ["ada", "gameboy", "emulator", "sdl"]
 
 project-files = ["gade_sdl.gpr"]

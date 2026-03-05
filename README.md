@@ -1,6 +1,6 @@
 # Gade SDL
 
-![Gade SDL on macOS](docs/assets/gade-sdl-macos-window.png)
+<img src="docs/assets/gade-sdl-macos-window.png" alt="Gade SDL on macOS" width="432" />
 
 A [SDL](https://www.libsdl.org/) front end in Ada for [gade](https://github.com/ellamosi/gade), intended as an easily portable reference implementation.
 
@@ -17,7 +17,7 @@ A [SDL](https://www.libsdl.org/) front end in Ada for [gade](https://github.com/
 
 This setup has been tested only on macOS 12 so far.
 
-From this repository directory (`gade_sdl`):
+From this repository directory (`gade-sdl`):
 
 ```sh
 alr build
