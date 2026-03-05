@@ -14,16 +14,28 @@ project-files = ["gade_sdl.gpr"]
 [gpr-externals]
 mode = ["debug", "release"]
 SDL_MODE = ["debug", "release"]
-SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "ios", "android"]
+SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports", "ios", "android"]
+SDL_LINK_STYLE = ["framework", "dylib"]
+GADE_LIBRARY_TYPE = ["relocatable", "static", "static-pic"]
 
 [gpr-set-externals]
 mode = "debug"
 SDL_MODE = "debug"
+GADE_LIBRARY_TYPE = "static"
 
 [gpr-set-externals.'case(os)']
 linux = { SDL_PLATFORM = "linux" }
 windows = { SDL_PLATFORM = "windows" }
 macos = { SDL_PLATFORM = "macosx" }
+
+[gpr-set-externals.'case(distribution)']
+homebrew = { SDL_LINK_STYLE = "dylib" }
+macports = { SDL_LINK_STYLE = "dylib" }
+
+[environment."case(os)".macos]
+C_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
+CPLUS_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
+LIBRARY_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
 
 [[depends-on]]
 sdlada = "^2.5.20"

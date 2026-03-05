@@ -12,6 +12,8 @@ project Gade_SDL is
 
    SDL_MODE : SDLAda.Mode_Type := external ("SDL_MODE");
    SDL_PLATFORM : SDLAda.Platform_Type := external ("SDL_PLATFORM");
+   type SDL_Link_Style_Type is ("framework", "dylib");
+   SDL_LINK_STYLE : SDL_Link_Style_Type := external ("SDL_LINK_STYLE", "framework");
    Mode : Mode_Type := external ("mode");
 
    package Naming renames Gade.Naming;
@@ -25,11 +27,27 @@ project Gade_SDL is
    package Linker is
       case SDL_PLATFORM is
          when "macosx" =>
-            --  Link against framework-based SDL2 installations on macOS.
+            case SDL_LINK_STYLE is
+               when "framework" =>
+                  --  Link against framework-based SDL2 installations on macOS.
+                  for Default_Switches ("ada") use
+                    ("-L/usr/local/lib",
+                     "-F/Library/Frameworks",
+                     "-framework", "SDL2");
+               when "dylib" =>
+                  --  Link against dylib-based SDL2 installs (e.g. MacPorts/Homebrew).
+                  for Default_Switches ("ada") use
+                    ("-L/opt/local/lib",
+                     "-L/usr/local/lib",
+                     "-lSDL2");
+            end case;
+         when "macos_homebrew" | "macos_ports" =>
+            --  Homebrew/MacPorts package SDL2 as shared libraries.
             for Default_Switches ("ada") use
-              ("-L/usr/local/lib",
-               "-F/Library/Frameworks",
-               "-framework", "SDL2");
+              ("-L/opt/local/lib",
+               "-L/opt/homebrew/lib",
+               "-L/usr/local/lib",
+               "-lSDL2");
          when others =>
             --  Link against the conventional Unix SDL2 library name.
             for Default_Switches ("ada") use
