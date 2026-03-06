@@ -100,10 +100,8 @@ begin
    Create (Runner);
 
    Put_Debug ("Initializing gade");
-   Create (G);
-   Set_Logger (G, Gade_Logger'Access);
-   Put_Debug ("Setting up input handling");
-   Set_Input_Reader (G, Input_Reader'Access);
+   Create (G, Input_Reader'Access, Gade_Logger'Access);
+   Put_Debug ("Input and logging initialized");
 
    while not Input_Reader.Quit loop
       if CLI.ROM_Filename (Args) /= "" then
