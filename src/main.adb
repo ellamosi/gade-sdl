@@ -6,6 +6,7 @@ with Gade.Interfaces; use Gade.Interfaces;
 
 with Audio.IO;            use Audio.IO;
 with Runtime.Main_Loop;        use Runtime.Main_Loop;
+with Runtime.Logging;
 with Video.Window;        use Video.Window;
 with Input;
 with CLI;
@@ -21,6 +22,7 @@ procedure Main is
    Window          : Window_Instance;
    Audio_IO        : Audio.IO.Instance;
    Input_Reader    : aliased Input.Instance;
+   Gade_Logger     : aliased Runtime.Logging.Instance;
    Runner          : Runtime.Main_Loop.Instance;
    Args            : CLI.Instance;
    SDL_Initialized : Boolean := False;
@@ -99,6 +101,7 @@ begin
 
    Put_Debug ("Initializing gade");
    Create (G);
+   Set_Logger (G, Gade_Logger'Access);
    Put_Debug ("Setting up input handling");
    Set_Input_Reader (G, Input_Reader'Access);
 
