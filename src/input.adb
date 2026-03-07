@@ -15,7 +15,7 @@ package body Input is
    end Create;
 
    overriding
-   function Read_Input (Input : Instance) return Input_State is
+   function Read_Input (Input : Instance) return State is
    begin
       return Input.Buttons;
    end Read_Input;
@@ -90,7 +90,7 @@ package body Input is
       Event   : SDL.Events.Events.Events;
       Pressed : Boolean)
    is
-      Buttons : Input_State renames Input.Buttons;
+      Buttons : State renames Input.Buttons;
    begin
       case Event.Keyboard.Key_Sym.Scan_Code is
          when SDL.Events.Keyboards.Scan_Code_Z =>
