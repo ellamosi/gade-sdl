@@ -1,4 +1,4 @@
-with Gade.Input_Reader; use Gade.Input_Reader;
+with Gade.Input; use Gade.Input;
 
 with SDL.Events.Events;
 
@@ -6,12 +6,12 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package Input is
 
-   type Instance is new Input_Reader_Type with private;
+   type Instance is new Reader_Interface with private;
 
    procedure Create (Input : out Instance);
 
    overriding
-   function Read_Input (Input : Instance) return Input_State;
+   function Read_Input (Input : Instance) return State;
 
    procedure Poll (Input : in out Instance);
 
@@ -29,8 +29,8 @@ package Input is
 
 private
 
-   type Instance is new Input_Reader_Type with record
-      Buttons      : Input_State;
+   type Instance is new Reader_Interface with record
+      Buttons      : State;
       Quit         : Boolean;
       Fast_Forward : Boolean;
       File         : Unbounded_String;
