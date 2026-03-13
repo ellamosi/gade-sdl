@@ -1,3 +1,5 @@
+[![Ada 2022](https://img.shields.io/static/v1?label=&message=2022&color=153261&labelColor=555&logo=ada&logoColor=white&logoSize=auto)](https://ada-lang.io/)
+
 # Gade SDL
 
 <img src="docs/assets/gade-sdl-macos-window.png" alt="Gade SDL on macOS" width="432" />
