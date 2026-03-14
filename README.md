@@ -1,4 +1,5 @@
 [![Ada 2022](https://img.shields.io/static/v1?label=&message=2022&color=153261&labelColor=555&logo=ada&logoColor=white&logoSize=auto)](https://ada-lang.io/)
+[![Mentioned in Awesome Ada](https://awesome.re/mentioned-badge.svg)](https://github.com/ohenley/awesome-ada)
 
 # Gade SDL
 
