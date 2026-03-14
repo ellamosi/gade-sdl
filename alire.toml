@@ -36,7 +36,8 @@ LIBRARY_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/
 sdlada = "^2.5.20"
 
 [[depends-on]]
-gade = "*"
-
-[[pins]]
-gade = { path = "../gade" }
+gade = "^0.1.0"
+# For local sibling development, pin temporarily:
+#   alr pin gade --use=../gade
+# To return to the published crate:
+#   alr pin gade --unpin
