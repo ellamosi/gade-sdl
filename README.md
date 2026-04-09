@@ -64,31 +64,38 @@ bin/gade --log=debug path/to/game.gb
 
 ## Audio Pipeline
 
-The front end uses a form of [Dynamic Rate Control](https://docs.libretro.com/development/cores/dynamic-rate-control/) to sync the audio to the video.
+The front end now feeds the emulator's native `S16 stereo @ 1048576 Hz` sample
+stream directly into an SDL3 audio stream and lets SDL handle any output-device
+conversion or resampling.
 
-1. `Runtime.Main_Loop` produces emulator audio in chunks (`Producer_Chunk_Samples`), inside `Generate`.
+1. `Runtime.Main_Loop` produces emulator audio in chunks (`Producer_Chunk_Samples`) inside `Generate`.
 2. It calls `Audio.IO.Queue_Asynchronously` to hand off each chunk.
-3. `Audio.IO.Queue_Asynchronously` writes raw `Stereo_Sample` data into `Source_Ring` (`Buffers.Transactional_Ring.Transactional_Ring_Buffer`).
-4. `Audio.IO.Resampling_Task` runs concurrently:
-   - reads from `Source_Ring`,
-   - computes fill error from `Output_Ring` level (`Audio.Callback.Level`),
-   - applies PI-based dynamic rate control ([PID](https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller) without the D/derivative: Proportional_Gain, Integral_Gain, clamped by `Max_Delta`),
-   - resamples via `Audio.Resampler` (cubic interpolation),
-   - writes float stereo frames into `Output_Ring` (another transactional ring).
-5. `Audio.Callback.SDL_Callback` is consumer-only:
-   - drains output Ring into SDL’s output buffer,
-   - writes silence for any remainder (underrun protection).
+3. `Audio.IO.Queue_Asynchronously` writes the generated `Stereo_Sample` block straight into the SDL3 playback stream with `SDL_PutAudioStreamData`.
+4. `Audio.IO` tracks the queued byte depth and derives:
+   - a target queue depth that keeps some latency headroom,
+   - a hard queue cap so latency cannot grow without bound.
+5. A small PI-style drift controller adjusts SDL3's stream frequency ratio around `1.0`
+   ([PID](https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller)
+   without the D/derivative: `Drift_Proportional_Gain`,
+   `Drift_Integral_Gain`, clamped by `Max_Drift_Ratio_Delta`):
+   - if the queue grows above target, the stream consumes input slightly faster,
+   - if the queue falls below target, the stream consumes input slightly slower,
+   - the correction is intentionally small and bounded (`±0.5%`).
+6. If the queued input reaches the hard cap, `Audio.IO` briefly waits before queuing more data.
+
+This keeps the SDL3 stream latency bounded without rebuilding the old SDL2-era
+callback, float ring buffer, or custom cubic resampler path.
 
 So the data flow is:
 
 ```mermaid
 flowchart LR
-    A[Main Loop<br/>Generate audio chunks] -->|Integer Samples| B
-    B[Source Ring<br/>Transactional Ring Buffer]
-    B --> C[Resampling Task<br/>PI-based Dynamic Rate Control]
-    C -->|Float Samples| D[Output Ring<br/>Transactional Ring Buffer]
-    D --> E[SDL Callback]
-    E --> F[SDL Audio Device]
+    A[Main Loop<br/>Generate audio chunks] -->|S16 stereo blocks| B
+    B[Audio.IO<br/>Queue management]
+    B -->|SDL_PutAudioStreamData| C[SDL3 Audio Stream]
+    C --> D[SDL device conversion<br/>and resampling]
+    D --> E[SDL Audio Device]
 
-    D -- Output Ring Fill --> C
+    C -- Queued bytes --> B
+    B -. Adjust frequency ratio .-> C
 ```

@@ -20,6 +20,8 @@ package Audio.IO is
    procedure Finalize (Self : in out Instance);
 
 private
+   Max_Drift_Ratio_Delta : constant Float := 0.005;
+
    type Instance is new Ada.Finalization.Limited_Controlled with record
       Playback_Stream      : SDL.Audio.Streams.Stream;
       Output_Spec          : SDL.Audio.Spec :=
@@ -27,7 +29,9 @@ private
          Channels  => 2,
          Frequency => 48_000);
       Device_Sample_Frames : Natural := 0;
+      Target_Queued_Bytes  : Natural := 0;
       Max_Queued_Bytes     : Natural := 0;
+      Ratio_Error_Integral : Float := 0.0;
       Is_Created           : Boolean := False;
    end record;
 

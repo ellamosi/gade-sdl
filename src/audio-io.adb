@@ -7,8 +7,13 @@ with System;
 package body Audio.IO is
 
    Source_Frame_Bytes : constant Positive := Stereo_Sample'Size / System.Storage_Unit;
-   Minimum_Queued_Producer_Chunks : constant Positive := 16;
-   Desired_Max_Queued_Device_Buffers : constant Positive := 4;
+   Minimum_Target_Queued_Producer_Chunks : constant Positive := 8;
+   Minimum_Max_Queued_Producer_Chunks    : constant Positive := 12;
+   Desired_Target_Queued_Device_Buffers  : constant Positive := 2;
+   Desired_Max_Queued_Device_Buffers     : constant Positive := 3;
+   Drift_Proportional_Gain               : constant Float := 0.004;
+   Drift_Integral_Gain                   : constant Float := 0.0001;
+   Drift_Integral_Limit                  : constant Float := 10.0;
 
    function Ceil_Div
      (Dividend : Long_Long_Integer;
@@ -23,6 +28,19 @@ package body Audio.IO is
 
    function Queue_Byte_Length (Frame_Count : Natural) return Natural is
      (Frame_Count * Source_Frame_Bytes);
+
+   function Clamp
+     (Value : Float;
+      Min   : Float;
+      Max   : Float) return Float;
+
+   function Clamp
+     (Value : Float;
+      Min   : Float;
+      Max   : Float) return Float is
+   begin
+      return Float'Max (Min, Float'Min (Max, Value));
+   end Clamp;
 
    function Source_Bytes_For_Output_Frames
      (Output_Frames    : Natural;
@@ -43,11 +61,48 @@ package body Audio.IO is
    end Source_Bytes_For_Output_Frames;
 
    procedure Wait_For_Queue_Capacity
-     (Self           : in Instance;
+     (Self           : in out Instance;
       Incoming_Bytes : in Natural);
 
+   procedure Update_Drift_Ratio
+     (Self         : in out Instance;
+      Queued_Bytes : in Natural);
+
+   procedure Update_Drift_Ratio
+     (Self         : in out Instance;
+      Queued_Bytes : in Natural)
+   is
+      Error : Float;
+      Ratio : SDL.Audio.Streams.Frequency_Ratio;
+   begin
+      if not Self.Is_Created or else Self.Target_Queued_Bytes = 0 then
+         return;
+      end if;
+
+      Error :=
+        (Float (Queued_Bytes) - Float (Self.Target_Queued_Bytes)) /
+        Float (Self.Target_Queued_Bytes);
+      Error := Clamp (Error, -1.0, 1.0);
+
+      Self.Ratio_Error_Integral :=
+        Clamp
+          (Self.Ratio_Error_Integral + Error,
+           -Drift_Integral_Limit,
+           Drift_Integral_Limit);
+
+      Ratio :=
+        SDL.Audio.Streams.Frequency_Ratio
+          (Clamp
+             (1.0 +
+              Error * Drift_Proportional_Gain +
+              Self.Ratio_Error_Integral * Drift_Integral_Gain,
+              1.0 - Max_Drift_Ratio_Delta,
+              1.0 + Max_Drift_Ratio_Delta));
+      Self.Playback_Stream.Set_Frequency_Ratio (Ratio);
+   end Update_Drift_Ratio;
+
    procedure Wait_For_Queue_Capacity
-     (Self           : in Instance;
+     (Self           : in out Instance;
       Incoming_Bytes : in Natural)
    is
       Queued_Bytes : Natural;
@@ -58,6 +113,7 @@ package body Audio.IO is
 
       loop
          Queued_Bytes := Self.Playback_Stream.Queued_Bytes;
+         Update_Drift_Ratio (Self, Queued_Bytes);
 
          exit when Queued_Bytes <= Self.Max_Queued_Bytes
            and then Incoming_Bytes <= Self.Max_Queued_Bytes - Queued_Bytes;
@@ -72,14 +128,23 @@ package body Audio.IO is
          Channels  => 2,
          Frequency => SDL.Audio.Sample_Rate (Samples_Second));
 
-      Device_Buffer_Bytes : Natural;
+      Target_Device_Buffer_Bytes : Natural;
+      Max_Device_Buffer_Bytes    : Natural;
    begin
       Self.Playback_Stream.Open
         (Application   => Requested_Spec,
          Output        => Self.Output_Spec,
          Sample_Frames => Self.Device_Sample_Frames);
 
-      Device_Buffer_Bytes :=
+      Target_Device_Buffer_Bytes :=
+        Source_Bytes_For_Output_Frames
+          (Output_Frames    =>
+             Natural'Max
+               (Self.Device_Sample_Frames * Desired_Target_Queued_Device_Buffers,
+                1),
+           Output_Frequency => Self.Output_Spec.Frequency);
+
+      Max_Device_Buffer_Bytes :=
         Source_Bytes_For_Output_Frames
           (Output_Frames    =>
              Natural'Max
@@ -87,14 +152,28 @@ package body Audio.IO is
                 1),
            Output_Frequency => Self.Output_Spec.Frequency);
 
-      Self.Max_Queued_Bytes :=
+      Self.Target_Queued_Bytes :=
         Natural'Max
-          (Device_Buffer_Bytes,
+          (Target_Device_Buffer_Bytes,
            Queue_Byte_Length
              (Runtime.Main_Loop.Producer_Chunk_Samples *
-              Minimum_Queued_Producer_Chunks));
+              Minimum_Target_Queued_Producer_Chunks));
 
+      Self.Max_Queued_Bytes :=
+        Natural'Max
+          (Max_Device_Buffer_Bytes,
+           Queue_Byte_Length
+             (Runtime.Main_Loop.Producer_Chunk_Samples *
+              Minimum_Max_Queued_Producer_Chunks));
+      Self.Max_Queued_Bytes :=
+        Natural'Max
+          (Self.Max_Queued_Bytes,
+           Self.Target_Queued_Bytes +
+             Queue_Byte_Length (Runtime.Main_Loop.Producer_Chunk_Samples));
+
+      Self.Playback_Stream.Set_Frequency_Ratio (1.0);
       Self.Playback_Stream.Resume;
+      Self.Ratio_Error_Integral := 0.0;
       Self.Is_Created := True;
 
       Put_Info
@@ -107,7 +186,9 @@ package body Audio.IO is
       when others =>
          Self.Playback_Stream.Close;
          Self.Device_Sample_Frames := 0;
+         Self.Target_Queued_Bytes := 0;
          Self.Max_Queued_Bytes := 0;
+         Self.Ratio_Error_Integral := 0.0;
          Self.Is_Created := False;
          raise;
    end Create;
@@ -133,6 +214,7 @@ package body Audio.IO is
          Self.Playback_Stream.Put
            (Data        => Samples.all (Samples.all'First)'Address,
             Byte_Length => Positive (Byte_Length));
+         Update_Drift_Ratio (Self, Self.Playback_Stream.Queued_Bytes);
       end;
    end Queue_Asynchronously;
 
@@ -155,7 +237,9 @@ package body Audio.IO is
 
       Self.Playback_Stream.Close;
       Self.Device_Sample_Frames := 0;
+      Self.Target_Queued_Bytes := 0;
       Self.Max_Queued_Bytes := 0;
+      Self.Ratio_Error_Integral := 0.0;
       Self.Is_Created := False;
    end Shutdown;
 
