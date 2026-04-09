@@ -11,7 +11,7 @@ A [SDL](https://www.libsdl.org/) front end in Ada for [Gade](https://github.com/
 
 ### Build
 
-This setup has been tested on MacOS 12 (Intel) and MacOS 26 (Apple Silicon) so far.
+This setup has been tested on macOS with SDL3 so far.
 
 Build using [Alire](https://alire.ada.dev/):
 
@@ -19,7 +19,15 @@ Build using [Alire](https://alire.ada.dev/):
 alr build
 ```
 
-This should install the required [Gade](https://github.com/ellamosi/gade) and [SDLAda](https://github.com/ada-game-framework/sdlada) dependencies, along with the SDL2 libraries if your system has [an Alire supported package manager](https://alire.ada.dev/docs/#external-releases).
+The local sibling-development setup in this repository pins
+[`gade`](https://github.com/ellamosi/gade) and `sdl3ada` from `../gade` and
+`../sdl3ada`. The frontend now targets SDL3 through `sdl3ada`, not SDL2 through
+`sdlada`.
+
+On macOS, the current baseline assumes SDL3 `release-3.4.4` is installed
+through MacPorts in `/opt/local/lib`. On other platforms, make sure the SDL3
+runtime and development libraries are available to the toolchain before
+building.
 
 The executable is generated at `bin/gade`.
 
