@@ -12,19 +12,17 @@ with SDL.Video.Pixels;
 with SDL.Log; use SDL.Log;
 
 package body Video.Window is
-   Default_Renderer_Driver : constant Integer := -1;
-   --  Preferred renderer driver on MacOS for sharper scaling in this setup.
-   Cocoa_Renderer_Driver : constant Integer := 1;
+   use type SDL.Video.Windows.Window_Flags;
 
    procedure Create_Renderer
      (Window         : in out Window_Instance;
       Created        : out Boolean;
-      Driver         : Integer := Default_Renderer_Driver;
+      Flags          : SDL.Video.Renderers.Renderer_Flags := SDL.Video.Renderers.Accelerated;
       Raise_On_Error : Boolean := False);
    procedure Create_Renderer
      (Window         : in out Window_Instance;
       Created        : out Boolean;
-      Driver         : Integer := Default_Renderer_Driver;
+      Flags          : SDL.Video.Renderers.Renderer_Flags := SDL.Video.Renderers.Accelerated;
       Raise_On_Error : Boolean := False)
    is
    begin
@@ -32,8 +30,7 @@ package body Video.Window is
       SDL.Video.Renderers.Makers.Create
         (Rend   => Window.Renderer,
          Window => Window.Window,
-         Flags  => SDL.Video.Renderers.Accelerated,
-         Driver => Driver);
+         Flags  => Flags);
 
       --  Validate renderer creation; Maker.Create does not raise on failure.
       SDL.Video.Renderers.Clear (Window.Renderer);
@@ -58,12 +55,20 @@ package body Video.Window is
          X      => 100,
          Y      => 100,
          Width  => Display_Width * 2,
-         Height => Display_Height * 2);
+         Height => Display_Height * 2,
+         Flags  => SDL.Video.Windows.Windowed or SDL.Video.Windows.High_Pixel_Density);
       Window_Created := True;
 
-      Create_Renderer (Window, Renderer_Created, Cocoa_Renderer_Driver);
+      Create_Renderer
+        (Window,
+         Renderer_Created,
+         Flags => SDL.Video.Renderers.Accelerated);
       if not Renderer_Created then
-         Create_Renderer (Window, Renderer_Created, Raise_On_Error => True);
+         Create_Renderer
+           (Window,
+            Renderer_Created,
+            Flags          => SDL.Video.Renderers.Software,
+            Raise_On_Error => True);
       end if;
 
       SDL.Video.Textures.Makers.Create
@@ -72,6 +77,9 @@ package body Video.Window is
          Format   => SDL.Video.Pixel_Formats.Pixel_Format_RGB_888,
          Kind     => SDL.Video.Textures.Streaming,
          Size     => (Display_Width, Display_Height));
+      SDL.Video.Textures.Set_Scale_Mode
+        (Window.Texture,
+         SDL.Video.Textures.Nearest);
 
       Window.Is_Created := True;
       Window.Is_Shutdown := False;

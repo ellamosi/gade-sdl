@@ -13,19 +13,23 @@ project-files = ["gade_sdl.gpr"]
 
 [gpr-externals]
 mode = ["debug", "release"]
-SDL_MODE = ["debug", "release"]
-SDL_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports", "ios", "android"]
+SDL3ADA_MODE = ["debug", "release"]
+SDL3ADA_PLATFORM = ["linux", "bsd", "windows", "macosx", "macos_homebrew", "macos_ports"]
 GADE_LIBRARY_TYPE = ["relocatable", "static", "static-pic"]
 
 [gpr-set-externals]
 mode = "debug"
-SDL_MODE = "debug"
+SDL3ADA_MODE = "debug"
 GADE_LIBRARY_TYPE = "static"
 
 [gpr-set-externals.'case(os)']
-linux = { SDL_PLATFORM = "linux" }
-windows = { SDL_PLATFORM = "windows" }
-macos = { SDL_PLATFORM = "macosx" }
+linux = { SDL3ADA_PLATFORM = "linux" }
+windows = { SDL3ADA_PLATFORM = "windows" }
+
+[gpr-set-externals.'case(os)'.macos.'case(distribution)']
+homebrew = { SDL3ADA_PLATFORM = "macos_homebrew" }
+macports = { SDL3ADA_PLATFORM = "macos_ports" }
+'...' = { SDL3ADA_PLATFORM = "macosx" }
 
 [environment."case(os)".macos]
 C_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"
@@ -33,7 +37,7 @@ CPLUS_INCLUDE_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sd
 LIBRARY_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
 
 [[depends-on]]
-sdlada = "^2.5.20"
+sdl3ada = "*"
 
 [[depends-on]]
 gade = "^0.1.0"
@@ -41,3 +45,9 @@ gade = "^0.1.0"
 #   alr pin gade --use=../gade
 # To return to the published crate:
 #   alr pin gade --unpin
+
+[[pins]]
+gade = { path='../gade' }
+
+[[pins]]
+sdl3ada = { path='../sdl3ada' }

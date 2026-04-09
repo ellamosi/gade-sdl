@@ -1,5 +1,5 @@
 with "gade";
-with "sdlada";
+with "sdl3ada";
 
 project Gade_SDL is
 
@@ -10,8 +10,7 @@ project Gade_SDL is
    for Exec_Dir use "bin";
    for Source_Dirs use ("src");
 
-   SDL_MODE : SDLAda.Mode_Type := external ("SDL_MODE");
-   SDL_PLATFORM : SDLAda.Platform_Type := external ("SDL_PLATFORM");
+   SDL3_PLATFORM : SDL3Ada.Platform_Type := external ("SDL3ADA_PLATFORM");
    Mode : Mode_Type := external ("mode");
 
    package Naming renames Gade.Naming;
@@ -23,24 +22,27 @@ project Gade_SDL is
    end Builder;
 
    package Linker is
-      case SDL_PLATFORM is
-         when "macosx" | "macos_homebrew" | "macos_ports" =>
-            --  Link against dylib-based SDL2 installs on macOS.
+      case SDL3_PLATFORM is
+         when "macosx" =>
+            for Default_Switches ("ada") use
+              ("-Wl,-framework,SDL3");
+         when "macos_homebrew" =>
+            for Default_Switches ("ada") use
+              ("-L/opt/homebrew/lib",
+               "-lSDL3");
+         when "macos_ports" =>
             for Default_Switches ("ada") use
               ("-L/opt/local/lib",
-               "-L/opt/homebrew/lib",
-               "-L/usr/local/lib",
-               "-lSDL2");
+               "-lSDL3");
          when others =>
-            --  Link against the conventional Unix SDL2 library name.
             for Default_Switches ("ada") use
-              ("-lSDL2");
+              ("-lSDL3");
       end case;
    end Linker;
 
    package Compiler renames Gade.Compiler;
 
-   package Pretty_Printer renames Gade.Pretty_Printer;
+   package Format renames Gade.Format;
 
    for Main use ("main.adb");
 

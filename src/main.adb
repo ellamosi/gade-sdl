@@ -18,6 +18,11 @@ with SDL.Error;
 with Ada.Exceptions; use Ada.Exceptions;
 
 procedure Main is
+   use type SDL.Init_Flags;
+
+   Required_SDL_Subsystems : constant SDL.Init_Flags :=
+     SDL.Enable_Video or SDL.Enable_Events;
+
    G               : Gade_Type;
    Window          : Window_Instance;
    Audio_IO        : Audio.IO.Instance;
@@ -82,7 +87,7 @@ procedure Main is
       end if;
    end Cleanup_Runtime;
 begin
-   if not SDL.Initialise then
+   if not SDL.Initialise (Required_SDL_Subsystems) then
       Ada.Text_IO.Put_Line ("SDL initialization failed: " & SDL.Error.Get);
       return;
    end if;
@@ -104,15 +109,15 @@ begin
    Put_Debug ("Input and logging initialized");
 
    while not Input_Reader.Quit loop
-      if CLI.ROM_Filename (Args) /= "" then
-         Render_Loop (CLI.ROM_Filename (Args));
-      elsif Input_Reader.File_Dropped then
+      if Input_Reader.File_Dropped then
          declare
             Filename : constant String := Input_Reader.Dropped_Filename;
          begin
             Input_Reader.Clear_Dropped_File;
             Render_Loop (Filename);
          end;
+      elsif CLI.ROM_Filename (Args) /= "" then
+         Render_Loop (CLI.ROM_Filename (Args));
       else
          Wait_Loop;
       end if;

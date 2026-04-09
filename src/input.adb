@@ -52,7 +52,6 @@ package body Input is
          when SDL.Events.Files.Drop_File =>
             SDL.Log.Put_Debug ("File dropped");
             Input.File := To_Unbounded_String (Value (Event.Drop.File_Name));
-            Free (Event.Drop.File_Name);
          when SDL.Events.Quit =>
             Input.Quit := True;
          when others =>

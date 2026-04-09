@@ -2,7 +2,6 @@ with Buffers.Bounded, Buffers.Ring;
 with Buffers.Transactional_Ring;
 
 with Gade.Audio_Buffer; use Gade.Audio_Buffer;
-with SDL.Audio.Devices;
 
 package Audio is private
 
@@ -27,11 +26,6 @@ package Audio is private
 
    function Data_Access (Buff : access Stereo_Sample_Buffer)
                          return Gade.Audio_Buffer.Audio_Buffer_Access;
-
-   package Devices is new SDL.Audio.Devices
-     (Frame_Type   => Float_Frame,
-      Buffer_Index => Positive,
-      Buffer_Type  => Bounded_Float_Buffers.Data_Container);
 
    package Cursor_Ring_Stereo_Samples is
      new Buffers.Transactional_Ring (Gade.Audio_Buffer.Stereo_Sample);
