@@ -2,26 +2,6 @@ with Ada.Unchecked_Conversion;
 
 package body Audio is
 
-   function "+" (Left, Right : Float_Frame) return Float_Frame is
-   begin
-      return (Left.Left + Right.Left, Left.Right + Right.Right);
-   end "+";
-
-   function "-" (Left, Right : Float_Frame) return Float_Frame is
-   begin
-      return (Left.Left - Right.Left, Left.Right - Right.Right);
-   end "-";
-
-   function "*" (Left : Float_Frame; Right : Float) return Float_Frame is
-   begin
-      return (Left.Left * Right, Left.Right * Right);
-   end "*";
-
-   function To_Float (S : Sample) return Float is
-   begin
-      return Float (S) / Float (Sample'Last);
-   end To_Float;
-
    function Data_Access (Buff : access Stereo_Sample_Buffer)
                          return Audio_Buffer_Access
    is

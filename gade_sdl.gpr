@@ -25,18 +25,22 @@ project Gade_SDL is
       case SDL3_PLATFORM is
          when "macosx" =>
             for Default_Switches ("ada") use
-              ("-Wl,-framework,SDL3");
+              ("-Wl,-framework,SDL3",
+               "-lgnarl");
          when "macos_homebrew" =>
             for Default_Switches ("ada") use
               ("-L/opt/homebrew/lib",
-               "-lSDL3");
+               "-lSDL3",
+               "-lgnarl");
          when "macos_ports" =>
             for Default_Switches ("ada") use
               ("-L/opt/local/lib",
-               "-lSDL3");
+               "-lSDL3",
+               "-lgnarl");
          when others =>
             for Default_Switches ("ada") use
-              ("-lSDL3");
+              ("-lSDL3",
+               "-lgnarl");
       end case;
    end Linker;
 

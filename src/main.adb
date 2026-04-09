@@ -21,7 +21,7 @@ procedure Main is
    use type SDL.Init_Flags;
 
    Required_SDL_Subsystems : constant SDL.Init_Flags :=
-     SDL.Enable_Video or SDL.Enable_Events;
+     SDL.Enable_Audio or SDL.Enable_Video or SDL.Enable_Events;
 
    G               : Gade_Type;
    Window          : Window_Instance;
