@@ -5,6 +5,7 @@ with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Unchecked_Conversion;
 
 with Interfaces;
+with Interfaces.C;
 
 with System;
 with System.Address_To_Access_Conversions;
@@ -19,16 +20,39 @@ package body Video.Window is
    use type Ada.Streams.Stream_Element_Offset;
    use type Interfaces.Unsigned_32;
    use type SDL.Platform.Platforms;
-   use type SDL.GPU.Texture_Formats;
+   use type SDL.Natural_Dimension;
    use type SDL.Video.Windows.Window_Flags;
    use type System.Address;
 
+   Desired_Device_Pixel_Scale : constant Float := 4.0;
+   Minimum_Window_Scale       : constant SDL.Positive_Dimension := 2;
+   Fixed_Aspect_Ratio         : constant Float :=
+     Float (Display_Width) / Float (Display_Height);
+
+   Display_Width_Dim : constant SDL.Natural_Dimension :=
+     SDL.Natural_Dimension (Display_Width);
+   Display_Height_Dim : constant SDL.Natural_Dimension :=
+     SDL.Natural_Dimension (Display_Height);
    Display_Width_U32 : constant Interfaces.Unsigned_32 :=
      Interfaces.Unsigned_32 (Display_Width);
    Display_Height_U32 : constant Interfaces.Unsigned_32 :=
      Interfaces.Unsigned_32 (Display_Height);
    Frame_Byte_Size : constant Interfaces.Unsigned_32 :=
      Interfaces.Unsigned_32 (RGB32_Display_Buffer'Size / System.Storage_Unit);
+
+   type Fragment_Uniform_Values is array (Natural range 0 .. 7) of
+     Interfaces.C.C_float
+   with Convention => C;
+   subtype Fragment_Uniform_Bytes is Ada.Streams.Stream_Element_Array
+     (1 .. Ada.Streams.Stream_Element_Offset
+        (Fragment_Uniform_Values'Size / System.Storage_Unit));
+
+   type Render_Viewport is record
+      X      : SDL.Natural_Dimension := 0;
+      Y      : SDL.Natural_Dimension := 0;
+      Width  : SDL.Natural_Dimension := 0;
+      Height : SDL.Natural_Dimension := 0;
+   end record;
 
    type Pixel_Format_Candidate_Arrays is
      array (Positive range <>) of SDL.Video.Pixel_Formats.Pixel_Format_Names;
@@ -51,7 +75,6 @@ package body Video.Window is
      "using namespace metal;" & LF &
      LF &
      "struct Vertex_Output {" & LF &
-     "    float2 uv;" & LF &
      "    float4 position [[position]];" & LF &
      "};" & LF &
      LF &
@@ -63,16 +86,8 @@ package body Video.Window is
      "        float2( 1.0, -1.0)," & LF &
      "        float2(-1.0, -1.0)" & LF &
      "    };" & LF &
-     "    const float2 uvs[4] = {" & LF &
-     "        float2(0.0, 0.0)," & LF &
-     "        float2(1.0, 0.0)," & LF &
-     "        float2(1.0, 1.0)," & LF &
-     "        float2(0.0, 1.0)" & LF &
-     "    };" & LF &
-     LF &
      "    Vertex_Output result;" & LF &
      "    const uint vertex_index = indices[vertex_id];" & LF &
-     "    result.uv = uvs[vertex_index];" & LF &
      "    result.position = float4(positions[vertex_index], 0.0, 1.0);" & LF &
      "    return result;" & LF &
      "}" & LF;
@@ -82,23 +97,63 @@ package body Video.Window is
      "using namespace metal;" & LF &
      LF &
      "struct Vertex_Output {" & LF &
-     "    float2 uv;" & LF &
      "    float4 position [[position]];" & LF &
      "};" & LF &
      LF &
-     "fragment float4 main1(Vertex_Output input [[stage_in]]," & LF &
-     "                      texture2d<float> source_texture [[texture(0)]]," & LF &
-     "                      sampler source_sampler [[sampler(0)]]) {" & LF &
+     "struct Fragment_Uniforms {" & LF &
+     "    float2 viewport_origin;" & LF &
+     "    float2 viewport_size;" & LF &
+     "    float2 source_size;" & LF &
+     "    float2 output_size;" & LF &
+     "};" & LF &
+     LF &
+     "float3 palette_color(float grayscale) {" & LF &
      "    constexpr float3 palette[4] = {" & LF &
      "        float3(224.0 / 255.0, 248.0 / 255.0, 208.0 / 255.0)," & LF &
      "        float3(136.0 / 255.0, 192.0 / 255.0, 112.0 / 255.0)," & LF &
      "        float3( 52.0 / 255.0, 104.0 / 255.0,  86.0 / 255.0)," & LF &
      "        float3(  8.0 / 255.0,  24.0 / 255.0,  32.0 / 255.0)" & LF &
      "    };" & LF &
-     "    const float grayscale = clamp(source_texture.sample(source_sampler, input.uv).r, 0.0, 1.0);" & LF &
      "    const float shade = min(floor(((1.0 - grayscale) * 3.0) + 0.5), 3.0);" & LF &
-     "    const uint index = uint(shade);" & LF &
-     "    return float4(palette[index], 1.0);" & LF &
+     "    return palette[uint(shade)];" & LF &
+     "}" & LF &
+     LF &
+     "fragment float4 main1(Vertex_Output input [[stage_in]]," & LF &
+     "                      texture2d<float> source_texture [[texture(0)]]," & LF &
+     "                      sampler source_sampler [[sampler(0)]]," & LF &
+     "                      constant Fragment_Uniforms &uniforms [[buffer(0)]]) {" & LF &
+     "    const float2 local_position = input.position.xy - uniforms.viewport_origin;" & LF &
+     "    const float2 cell_size = uniforms.viewport_size / uniforms.source_size;" & LF &
+     "    const float2 pixel_position = clamp(floor(local_position / cell_size)," &
+     " float2(0.0), uniforms.source_size - 1.0);" & LF &
+     "    const float2 source_uv = (pixel_position + 0.5) / uniforms.source_size;" & LF &
+     "    const float2 cell_uv = fract(local_position / cell_size);" & LF &
+     "    const float2 texel_size = 1.0 / uniforms.source_size;" & LF &
+     "    const float3 shade_color = palette_color(clamp(" &
+     "source_texture.sample(source_sampler, source_uv).r, 0.0, 1.0));" & LF &
+     "    const float3 right_color = palette_color(clamp(" &
+     "source_texture.sample(source_sampler, source_uv + float2(texel_size.x, 0.0)).r, 0.0, 1.0));" & LF &
+     "    const float3 lower_color = palette_color(clamp(" &
+     "source_texture.sample(source_sampler, source_uv + float2(0.0, texel_size.y)).r, 0.0, 1.0));" & LF &
+     LF &
+     "    const float2 center_distance = abs(cell_uv - 0.5);" & LF &
+     "    const float pixel_mask_x = 1.0 - smoothstep(0.26, 0.42, center_distance.x);" & LF &
+     "    const float pixel_mask_y = 1.0 - smoothstep(0.24, 0.44, center_distance.y);" & LF &
+     "    const float pixel_mask = pixel_mask_x * pixel_mask_y;" & LF &
+     "    const float glow = 1.0 - clamp(dot(center_distance * 2.2, center_distance * 2.2), 0.0, 1.0);" & LF &
+     "    const float edge_bleed = (smoothstep(0.70, 1.0, cell_uv.x) * 0.06)" &
+     " + (smoothstep(0.70, 1.0, cell_uv.y) * 0.04);" & LF &
+     "    const float2 screen_position = (input.position.xy / uniforms.output_size) - 0.5;" & LF &
+     "    const float screen_vignette = 1.0 - (dot(screen_position, screen_position) * 0.14);" & LF &
+     LF &
+     "    float3 gap_color = mix(float3(190.0 / 255.0, 214.0 / 255.0, 160.0 / 255.0)," &
+     " shade_color * 0.40, 0.30 + (glow * 0.18));" & LF &
+     "    gap_color = mix(gap_color, (shade_color + (right_color * 0.6)" &
+     " + (lower_color * 0.4)) / 2.0, edge_bleed);" & LF &
+     "    const float vertical_bias = 0.92 + ((1.0 - cell_uv.y) * 0.08);" & LF &
+     "    const float3 lit_color = shade_color * (0.94 + (glow * 0.11)) * vertical_bias;" & LF &
+     "    const float3 final_color = mix(gap_color, lit_color, pixel_mask) * screen_vignette;" & LF &
+     "    return float4(final_color, 1.0);" & LF &
      "}" & LF;
 
    package RGB32_Display_Buffer_Conversions is new
@@ -111,9 +166,22 @@ package body Video.Window is
      new Ada.Unchecked_Conversion
        (Source => Internal_RGB32_Display_Buffer_Access,
         Target => Gade.Video_Buffer.RGB32_Display_Buffer_Access);
+   function To_Fragment_Uniform_Data is new Ada.Unchecked_Conversion
+     (Source => Fragment_Uniform_Values,
+      Target => Fragment_Uniform_Bytes);
 
    function To_Stream_Elements
      (Text : in String) return Ada.Streams.Stream_Element_Array;
+   function Desired_Window_Scale
+     (Pixel_Density : in Float) return SDL.Positive_Dimension;
+   procedure Configure_Window (Window : in out Window_Instance);
+   function Compute_Render_Viewport
+     (Output_Width  : in SDL.Natural_Dimension;
+      Output_Height : in SDL.Natural_Dimension) return Render_Viewport;
+   function Make_Fragment_Uniform_Data
+     (Viewport      : in Render_Viewport;
+      Output_Width  : in SDL.Natural_Dimension;
+      Output_Height : in SDL.Natural_Dimension) return Fragment_Uniform_Bytes;
 
    function To_Stream_Elements
      (Text : in String) return Ada.Streams.Stream_Element_Array
@@ -135,7 +203,9 @@ package body Video.Window is
      (Driver : in String) return SDL.Video.Windows.Window_Flags
    is
       Flags : SDL.Video.Windows.Window_Flags :=
-        SDL.Video.Windows.Windowed or SDL.Video.Windows.High_Pixel_Density;
+        SDL.Video.Windows.Windowed or
+        SDL.Video.Windows.High_Pixel_Density or
+        SDL.Video.Windows.Resizable;
    begin
       if Driver = "metal" then
          Flags := Flags or SDL.Video.Windows.Metal;
@@ -145,6 +215,109 @@ package body Video.Window is
 
       return Flags;
    end Window_Flags_For;
+
+   function Desired_Window_Scale
+     (Pixel_Density : in Float) return SDL.Positive_Dimension
+   is
+      Density : constant Float :=
+        (if Pixel_Density > 0.0 then Pixel_Density else 1.0);
+      Scale   : SDL.Positive_Dimension := Minimum_Window_Scale;
+   begin
+      while Float (Scale) * Density < Desired_Device_Pixel_Scale loop
+         Scale := Scale + 1;
+      end loop;
+
+      return Scale;
+   end Desired_Window_Scale;
+
+   procedure Configure_Window (Window : in out Window_Instance) is
+      Scale : constant SDL.Positive_Dimension :=
+        Desired_Window_Scale (Window.Window.Get_Pixel_Density);
+   begin
+      Window.Window.Set_Size
+        (Width  => SDL.Positive_Dimension (Display_Width * Integer (Scale)),
+         Height => SDL.Positive_Dimension (Display_Height * Integer (Scale)));
+      Window.Window.Set_Minimum_Size
+        (Width  =>
+           SDL.Positive_Dimension
+             (Display_Width * Integer (Minimum_Window_Scale)),
+         Height =>
+           SDL.Positive_Dimension
+             (Display_Height * Integer (Minimum_Window_Scale)));
+      Window.Window.Set_Aspect_Ratio
+        (Minimum => Fixed_Aspect_Ratio,
+         Maximum => Fixed_Aspect_Ratio);
+   end Configure_Window;
+
+   function Compute_Render_Viewport
+     (Output_Width  : in SDL.Natural_Dimension;
+      Output_Height : in SDL.Natural_Dimension) return Render_Viewport
+   is
+      Scale_X : constant SDL.Natural_Dimension :=
+        Output_Width / Display_Width_Dim;
+      Scale_Y : constant SDL.Natural_Dimension :=
+        Output_Height / Display_Height_Dim;
+      Integer_Scale : SDL.Natural_Dimension := Scale_X;
+      Viewport_Width  : SDL.Natural_Dimension;
+      Viewport_Height : SDL.Natural_Dimension;
+   begin
+      if Scale_Y < Integer_Scale then
+         Integer_Scale := Scale_Y;
+      end if;
+
+      if Integer_Scale > 0 then
+         Viewport_Width :=
+           SDL.Natural_Dimension (Display_Width * Integer (Integer_Scale));
+         Viewport_Height :=
+           SDL.Natural_Dimension (Display_Height * Integer (Integer_Scale));
+      else
+         declare
+            Scale : Float := Float (Output_Width) / Float (Display_Width);
+            Alt   : constant Float := Float (Output_Height) / Float (Display_Height);
+         begin
+            if Alt < Scale then
+               Scale := Alt;
+            end if;
+
+            Viewport_Width :=
+              SDL.Natural_Dimension (Float (Display_Width) * Scale);
+            Viewport_Height :=
+              SDL.Natural_Dimension (Float (Display_Height) * Scale);
+
+            if Viewport_Width = 0 then
+               Viewport_Width := 1;
+            end if;
+
+            if Viewport_Height = 0 then
+               Viewport_Height := 1;
+            end if;
+         end;
+      end if;
+
+      return
+        (X      => (Output_Width - Viewport_Width) / 2,
+         Y      => (Output_Height - Viewport_Height) / 2,
+         Width  => Viewport_Width,
+         Height => Viewport_Height);
+   end Compute_Render_Viewport;
+
+   function Make_Fragment_Uniform_Data
+     (Viewport      : in Render_Viewport;
+      Output_Width  : in SDL.Natural_Dimension;
+      Output_Height : in SDL.Natural_Dimension) return Fragment_Uniform_Bytes
+   is
+      Values : constant Fragment_Uniform_Values :=
+        [0 => Interfaces.C.C_float (Float (Viewport.X)),
+         1 => Interfaces.C.C_float (Float (Viewport.Y)),
+         2 => Interfaces.C.C_float (Float (Viewport.Width)),
+         3 => Interfaces.C.C_float (Float (Viewport.Height)),
+         4 => Interfaces.C.C_float (Float (Display_Width)),
+         5 => Interfaces.C.C_float (Float (Display_Height)),
+         6 => Interfaces.C.C_float (Float (Output_Width)),
+         7 => Interfaces.C.C_float (Float (Output_Height))];
+   begin
+      return To_Fragment_Uniform_Data (Values);
+   end Make_Fragment_Uniform_Data;
 
    function Supports_Format
      (Supported : in SDL.GPU.Shader_Formats;
@@ -252,6 +425,7 @@ package body Video.Window is
          Width  => Display_Width * 2,
          Height => Display_Height * 2,
          Flags  => Window_Flags_For (SDL.GPU.Driver_Name (Window.Device)));
+      Configure_Window (Window);
 
       SDL.GPU.Claim_Window (Window.Device, Window.Window);
       Window.Is_Window_Claimed := True;
@@ -324,7 +498,8 @@ package body Video.Window is
          "main1",
          SDL.GPU.MSL_Shader_Format,
          SDL.GPU.Fragment_Shader,
-         Num_Samplers => 1);
+         Num_Samplers        => 1,
+         Num_Uniform_Buffers => 1);
       SDL.GPU.Create_Graphics_Pipeline
         (Window.Pipeline,
          Window.Device,
@@ -359,6 +534,7 @@ package body Video.Window is
       Swapchain     : SDL.GPU.Texture;
       Width         : SDL.Natural_Dimension;
       Height        : SDL.Natural_Dimension;
+      Viewport      : Render_Viewport;
       Copy_Pass_Open   : Boolean := False;
       Render_Pass_Open : Boolean := False;
       Debug_Group_Open : Boolean := False;
@@ -402,7 +578,12 @@ package body Video.Window is
          return;
       end if;
       Swapchain_Acquired := True;
+      Viewport := Compute_Render_Viewport (Width, Height);
 
+      SDL.GPU.Push_Fragment_Uniform_Data
+        (Command,
+         0,
+         Make_Fragment_Uniform_Data (Viewport, Width, Height));
       Render_Pass :=
         SDL.GPU.Begin_Render_Pass
           (Command,
@@ -416,10 +597,10 @@ package body Video.Window is
 
       SDL.GPU.Set_Viewport
         (Render_Pass,
-         (X         => 0.0,
-          Y         => 0.0,
-          Width     => Float (Width),
-          Height    => Float (Height),
+         (X         => Float (Viewport.X),
+          Y         => Float (Viewport.Y),
+          Width     => Float (Viewport.Width),
+          Height    => Float (Viewport.Height),
           Min_Depth => 0.0,
           Max_Depth => 1.0));
       SDL.GPU.Bind_Pipeline (Render_Pass, Window.Pipeline);
