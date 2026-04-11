@@ -22,7 +22,7 @@ procedure Main is
    use type SDL.Init_Flags;
 
    Required_SDL_Subsystems : constant SDL.Init_Flags :=
-     SDL.Enable_Audio or SDL.Enable_Video or SDL.Enable_Events;
+     SDL.Enable_Audio or SDL.Enable_Video or SDL.Enable_Events or SDL.Enable_Camera;
 
    G               : Gade_Type;
    Window          : Window_Instance;
@@ -83,6 +83,7 @@ procedure Main is
       if SDL_Initialized then
          --  Local resources are controlled and will get automatically finalized
          Shutdown (Audio_IO);
+         Runtime.Camera.Shutdown (Camera_Provider);
          Shutdown (Window);
          SDL.Finalise;
          SDL_Initialized := False;
@@ -104,6 +105,7 @@ begin
    Create (Window);
    Create (Audio_IO);
    Input.Create (Input_Reader);
+   Runtime.Camera.Create (Camera_Provider);
    Create (Runner);
 
    Put_Debug ("Initializing gade");
