@@ -6,6 +6,7 @@ with Gade.Interfaces; use Gade.Interfaces;
 
 with Audio.IO;            use Audio.IO;
 with Runtime.Main_Loop;        use Runtime.Main_Loop;
+with Runtime.Camera;
 with Runtime.Logging;
 with Video.Window;        use Video.Window;
 with Input;
@@ -27,6 +28,7 @@ procedure Main is
    Window          : Window_Instance;
    Audio_IO        : Audio.IO.Instance;
    Input_Reader    : aliased Input.Instance;
+   Camera_Provider : aliased Runtime.Camera.Instance;
    Gade_Logger     : aliased Runtime.Logging.Instance;
    Runner          : Runtime.Main_Loop.Instance;
    Args            : CLI.Instance;
@@ -105,8 +107,8 @@ begin
    Create (Runner);
 
    Put_Debug ("Initializing gade");
-   Create (G, Input_Reader'Access, Gade_Logger'Access);
-   Put_Debug ("Input and logging initialized");
+   Create (G, Input_Reader'Access, Gade_Logger'Access, Camera_Provider'Access);
+   Put_Debug ("Input, camera and logging initialized");
 
    while not Input_Reader.Quit loop
       if Input_Reader.File_Dropped then
