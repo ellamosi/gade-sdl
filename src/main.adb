@@ -66,6 +66,7 @@ procedure Main is
          Frame_Timer.Time_Frame;
 
          Step (Runner, G, Window, Audio_IO);
+         Runtime.Camera.Service (Camera_Provider);
 
          Input_Reader.Poll;
 

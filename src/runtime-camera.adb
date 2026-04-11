@@ -1,4 +1,5 @@
 with Ada.Exceptions;           use Ada.Exceptions;
+with Ada.Real_Time;           use Ada.Real_Time;
 with Ada.Strings;             use Ada.Strings;
 with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
 with Ada.Unchecked_Deallocation;
@@ -29,15 +30,13 @@ package body Runtime.Camera is
       Framerate_Numerator   => 30,
       Framerate_Denominator => 1);
 
+   Close_Grace_Period : constant Time_Span := Milliseconds (3_000);
+
    procedure Free is new Ada.Unchecked_Deallocation
      (Object => State,
       Name   => State_Access);
 
-   function Pattern_Color
-     (X : Gade.Camera.Column_Index;
-      Y : Gade.Camera.Row_Index) return Gade.Camera.Pixel_Value;
-
-   procedure Generate_Fallback (Frame : out Gade.Camera.Bitmap);
+   procedure Generate_Black (Frame : out Gade.Camera.Bitmap);
 
    function Camera_Label (Device : SDL.Cameras.ID) return String;
 
@@ -57,43 +56,92 @@ package body Runtime.Camera is
 
    procedure Refresh_From_Device (Provider_State : in out State);
 
-   function Pattern_Color
-     (X : Gade.Camera.Column_Index;
-      Y : Gade.Camera.Row_Index) return Gade.Camera.Pixel_Value
-   is
-      Center_X : constant Integer := Gade.Camera.Capture_Width / 2;
-      Center_Y : constant Integer := Gade.Camera.Capture_Height / 2;
-      DX       : constant Integer := Integer (X) - Center_X;
-      DY       : constant Integer := Integer (Y) - Center_Y;
+   procedure Reset_Cached_Frame
+     (Provider_State      : in out State;
+      Reset_Permission    : Boolean := True);
 
-      Checker_Is_Light : constant Boolean :=
-        (((Integer (X) / 8) + (Integer (Y) / 8)) mod 2) = 0;
-      On_Crosshair : constant Boolean := abs (DX) <= 2 or else abs (DY) <= 2;
-      On_Diagonal : constant Boolean :=
-        abs (abs (DX) - abs (DY)) <= 2;
-      In_Center_Diamond : constant Boolean := abs (DX) + abs (DY) <= 18;
-   begin
-      if On_Crosshair then
-         return 3;
-      elsif On_Diagonal then
-         return 2;
-      elsif In_Center_Diamond then
-         return 0;
-      elsif Checker_Is_Light then
-         return 1;
-      else
-         return 2;
-      end if;
-   end Pattern_Color;
+   procedure Close_Device (Provider_State : in out State);
 
-   procedure Generate_Fallback (Frame : out Gade.Camera.Bitmap) is
+   procedure Open_Device (Provider_State : in out State);
+
+   procedure Generate_Black (Frame : out Gade.Camera.Bitmap) is
    begin
       for Y in Frame'Range (1) loop
          for X in Frame'Range (2) loop
-            Frame (Y, X) := Pattern_Color (X, Y);
+            Frame (Y, X) := 0;
          end loop;
       end loop;
-   end Generate_Fallback;
+   end Generate_Black;
+
+   procedure Reset_Cached_Frame
+     (Provider_State      : in out State;
+      Reset_Permission    : Boolean := True)
+   is
+   begin
+      Generate_Black (Provider_State.Last_Frame);
+      Provider_State.Have_Last_Frame := False;
+      Provider_State.Capture_Error_Seen := False;
+      Provider_State.Seen_Real_Frame := False;
+      if Reset_Permission then
+         Provider_State.Permission_State_Seen := False;
+         Provider_State.Last_Permission_State := SDL.Cameras.Pending;
+      end if;
+   end Reset_Cached_Frame;
+
+   procedure Close_Device (Provider_State : in out State) is
+   begin
+      if not SDL.Cameras.Is_Null (Provider_State.Device) then
+         Provider_State.Device.Close;
+      end if;
+
+      Reset_Cached_Frame (Provider_State);
+      Provider_State.Close_Deadline_Valid := False;
+   end Close_Device;
+
+   procedure Open_Device (Provider_State : in out State) is
+      Devices       : constant SDL.Cameras.ID_Lists := SDL.Cameras.Get_Cameras;
+      Selected      : SDL.Cameras.ID;
+      Actual_Format : SDL.Cameras.Spec;
+      Driver_Name   : constant String := SDL.Cameras.Current_Driver_Name;
+   begin
+      if not SDL.Cameras.Is_Null (Provider_State.Device) then
+         return;
+      end if;
+
+      Reset_Cached_Frame (Provider_State);
+
+      if Driver_Name /= "" then
+         Put_Debug ("SDL camera driver: " & Driver_Name);
+      end if;
+
+      if Devices'Length = 0 then
+         Put_Warn ("No SDL camera devices detected; using black camera frames");
+         return;
+      end if;
+
+      Selected := Select_Device (Devices);
+      Put_Info ("Opening SDL camera: " & Camera_Label (Selected));
+      Provider_State.Device.Open (Selected, Desired_Spec);
+
+      if Provider_State.Device.Get_Format (Actual_Format) then
+         Put_Info
+           ("SDL camera stream: "
+            & Trim (Integer (Actual_Format.Width)'Image, Left)
+            & "x"
+            & Trim (Integer (Actual_Format.Height)'Image, Left)
+            & " "
+            & SDL.Video.Pixel_Formats.Image (Actual_Format.Format));
+      end if;
+
+      Log_Permission_State (Provider_State);
+   exception
+      when E : others =>
+         Close_Device (Provider_State);
+         Put_Warn
+           ("Failed to initialize SDL camera: "
+            & Exception_Message (E)
+            & "; using black camera frames");
+   end Open_Device;
 
    function Camera_Label (Device : SDL.Cameras.ID) return String is
       Name : constant String := SDL.Cameras.Name (Device);
@@ -165,7 +213,7 @@ package body Runtime.Camera is
          when SDL.Cameras.Pending =>
             Put_Info ("SDL camera permission pending");
          when SDL.Cameras.Denied =>
-            Put_Warn ("SDL camera permission denied; using synthetic fallback");
+            Put_Warn ("SDL camera permission denied; using black camera frames");
       end case;
 
       Provider_State.Permission_State_Seen := True;
@@ -239,6 +287,10 @@ package body Runtime.Camera is
       Surface        : SDL.Video.Surfaces.Surface := SDL.Video.Surfaces.Null_Surface;
       Latest_Surface : SDL.Video.Surfaces.Surface := SDL.Video.Surfaces.Null_Surface;
    begin
+      if not Provider_State.Capture_Active then
+         return;
+      end if;
+
       if SDL.Cameras.Is_Null (Provider_State.Device) then
          return;
       end if;
@@ -277,55 +329,59 @@ package body Runtime.Camera is
    end Refresh_From_Device;
 
    procedure Create (Provider : in out Instance) is
-      Devices       : constant SDL.Cameras.ID_Lists := SDL.Cameras.Get_Cameras;
-      Selected      : SDL.Cameras.ID;
-      Actual_Format : SDL.Cameras.Spec;
-      Driver_Name   : constant String := SDL.Cameras.Current_Driver_Name;
    begin
       Shutdown (Provider);
 
       Provider.State := new State;
+   end Create;
 
-      if Driver_Name /= "" then
-         Put_Debug ("SDL camera driver: " & Driver_Name);
-      end if;
-
-      if Devices'Length = 0 then
-         Put_Warn ("No SDL camera devices detected; using synthetic fallback");
+   procedure Service (Provider : in out Instance) is
+   begin
+      if Provider.State = null
+        or else Provider.State.Capture_Active
+        or else not Provider.State.Close_Deadline_Valid
+        or else Clock < Provider.State.Close_Deadline
+      then
          return;
       end if;
 
-      Selected := Select_Device (Devices);
-      Put_Info ("Opening SDL camera: " & Camera_Label (Selected));
-      Provider.State.Device.Open (Selected, Desired_Spec);
-
-      if Provider.State.Device.Get_Format (Actual_Format) then
-         Put_Info
-           ("SDL camera stream: "
-            & Trim (Integer (Actual_Format.Width)'Image, Left)
-            & "x"
-            & Trim (Integer (Actual_Format.Height)'Image, Left)
-            & " "
-            & SDL.Video.Pixel_Formats.Image (Actual_Format.Format));
-      end if;
-
-      Log_Permission_State (Provider.State.all);
-   exception
-      when E : others =>
-         Shutdown (Provider);
-         Put_Warn
-           ("Failed to initialize SDL camera: "
-            & Exception_Message (E)
-            & "; using synthetic fallback");
-   end Create;
+      Close_Device (Provider.State.all);
+   end Service;
 
    procedure Shutdown (Provider : in out Instance) is
    begin
       if Provider.State /= null then
+         Close_Device (Provider.State.all);
          Free (Provider.State);
          Provider.State := null;
       end if;
    end Shutdown;
+
+   overriding
+   procedure Set_Capture_Active
+     (Provider : in out Instance;
+      Active   : Boolean)
+   is
+   begin
+      if Provider.State = null or else Provider.State.Capture_Active = Active then
+         return;
+      end if;
+
+      Provider.State.Capture_Active := Active;
+
+      if Active then
+         Provider.State.Close_Deadline_Valid := False;
+         Open_Device (Provider.State.all);
+      else
+         Reset_Cached_Frame (Provider.State.all, Reset_Permission => False);
+         if SDL.Cameras.Is_Null (Provider.State.Device) then
+            Provider.State.Close_Deadline_Valid := False;
+         else
+            Provider.State.Close_Deadline := Clock + Close_Grace_Period;
+            Provider.State.Close_Deadline_Valid := True;
+         end if;
+      end if;
+   end Set_Capture_Active;
 
    overriding
    procedure Capture_Frame
@@ -333,7 +389,7 @@ package body Runtime.Camera is
       Frame    : out Gade.Camera.Bitmap)
    is
    begin
-      if Provider.State /= null then
+      if Provider.State /= null and then Provider.State.Capture_Active then
          begin
             Refresh_From_Device (Provider.State.all);
          exception
@@ -342,7 +398,7 @@ package body Runtime.Camera is
                   Put_Warn
                     ("SDL camera frame capture failed: "
                      & Exception_Message (E)
-                     & "; reusing cached frame or fallback");
+                     & "; reusing cached frame or using black fallback");
                   Provider.State.Capture_Error_Seen := True;
                end if;
          end;
@@ -353,7 +409,7 @@ package body Runtime.Camera is
          end if;
       end if;
 
-      Generate_Fallback (Frame);
+      Generate_Black (Frame);
    end Capture_Frame;
 
 end Runtime.Camera;
