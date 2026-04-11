@@ -224,8 +224,9 @@ package body Runtime.Camera is
    end Update_Last_Frame;
 
    procedure Refresh_From_Device (Provider_State : in out State) is
-      Timestamp_NS : SDL.Cameras.Timestamp_Nanoseconds := 0;
-      Surface      : SDL.Video.Surfaces.Surface := SDL.Video.Surfaces.Null_Surface;
+      Timestamp_NS   : SDL.Cameras.Timestamp_Nanoseconds := 0;
+      Surface        : SDL.Video.Surfaces.Surface := SDL.Video.Surfaces.Null_Surface;
+      Latest_Surface : SDL.Video.Surfaces.Surface := SDL.Video.Surfaces.Null_Surface;
    begin
       if SDL.Cameras.Is_Null (Provider_State.Device) then
          return;
@@ -237,22 +238,31 @@ package body Runtime.Camera is
          return;
       end if;
 
-      Surface := Provider_State.Device.Acquire_Frame (Timestamp_NS);
+      loop
+         Surface := Provider_State.Device.Acquire_Frame (Timestamp_NS);
+         exit when Surface = SDL.Video.Surfaces.Null_Surface;
+
+         if Latest_Surface /= SDL.Video.Surfaces.Null_Surface then
+            Provider_State.Device.Release_Frame (Latest_Surface);
+         end if;
+
+         Latest_Surface := Surface;
+      end loop;
       pragma Unreferenced (Timestamp_NS);
 
-      if Surface = SDL.Video.Surfaces.Null_Surface then
+      if Latest_Surface = SDL.Video.Surfaces.Null_Surface then
          return;
       end if;
 
       begin
-         Update_Last_Frame (Provider_State, Surface);
+         Update_Last_Frame (Provider_State, Latest_Surface);
       exception
          when others =>
-            Provider_State.Device.Release_Frame (Surface);
+            Provider_State.Device.Release_Frame (Latest_Surface);
             raise;
       end;
 
-      Provider_State.Device.Release_Frame (Surface);
+      Provider_State.Device.Release_Frame (Latest_Surface);
    end Refresh_From_Device;
 
    procedure Create (Provider : in out Instance) is
