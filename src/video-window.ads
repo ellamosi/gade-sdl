@@ -2,9 +2,8 @@ with Ada.Finalization; use Ada.Finalization;
 
 with Gade.Video_Buffer; use Gade.Video_Buffer;
 
+with SDL.GPU;
 with SDL.Video.Windows;
-with SDL.Video.Textures;
-with SDL.Video.Renderers;
 
 package Video.Window is
 
@@ -29,11 +28,17 @@ package Video.Window is
 private
 
    type Window_Instance is new Limited_Controlled with record
-      Window   : SDL.Video.Windows.Window;
-      Texture  : SDL.Video.Textures.Texture;
-      Renderer : SDL.Video.Renderers.Renderer;
-      Is_Created  : Boolean := False;
-      Is_Shutdown : Boolean := False;
+      Window            : SDL.Video.Windows.Window;
+      Device            : SDL.GPU.Device;
+      Upload_Buffer     : SDL.GPU.Transfer_Buffer;
+      Source_Texture    : SDL.GPU.Texture;
+      Sampler           : SDL.GPU.Sampler;
+      Vertex_Shader     : SDL.GPU.Shader;
+      Fragment_Shader   : SDL.GPU.Shader;
+      Pipeline          : SDL.GPU.Graphics_Pipeline;
+      Is_Window_Claimed : Boolean := False;
+      Is_Created        : Boolean := False;
+      Is_Shutdown       : Boolean := False;
    end record;
 
 end Video.Window;
