@@ -45,7 +45,9 @@ package body Runtime.Camera is
      (Devices : SDL.Cameras.ID_Lists) return SDL.Cameras.ID;
 
    function To_Pixel_Value
-     (Pixel : SDL.Video.Pixels.ARGB_8888) return Gade.Camera.Pixel_Value;
+     (X     : Gade.Camera.Column_Index;
+      Y     : Gade.Camera.Row_Index;
+      Pixel : SDL.Video.Pixels.ARGB_8888) return Gade.Camera.Pixel_Value;
 
    procedure Log_Permission_State (Provider_State : in out State);
 
@@ -119,23 +121,32 @@ package body Runtime.Camera is
    end Select_Device;
 
    function To_Pixel_Value
-     (Pixel : SDL.Video.Pixels.ARGB_8888) return Gade.Camera.Pixel_Value
+     (X     : Gade.Camera.Column_Index;
+      Y     : Gade.Camera.Row_Index;
+      Pixel : SDL.Video.Pixels.ARGB_8888) return Gade.Camera.Pixel_Value
    is
+      Bayer_4x4 : constant array (Natural range 0 .. 3, Natural range 0 .. 3) of Natural :=
+        [[0, 8, 2, 10],
+         [12, 4, 14, 6],
+         [3, 11, 1, 9],
+         [15, 7, 13, 5]];
       Luma : constant Integer :=
         (77 * Integer (Pixel.Red)
          + 150 * Integer (Pixel.Green)
          + 29 * Integer (Pixel.Blue)
          + 128) / 256;
+      Darkness : constant Float := Float (255 - Luma) * 3.0 / 255.0;
+      Threshold : constant Float :=
+        (Float (Bayer_4x4 (Natural (Y) mod 4, Natural (X) mod 4)) + 0.5) / 16.0;
+      Shade : Integer := Integer (Darkness);
    begin
-      if Luma >= 192 then
-         return 0;
-      elsif Luma >= 128 then
-         return 1;
-      elsif Luma >= 64 then
-         return 2;
-      else
-         return 3;
+      --  Ordered dithering gives the 2-bit host-camera image a much closer
+      --  match to the characteristic stippled look of Game Boy Camera output.
+      if Shade < 3 and then Darkness - Float (Shade) > Threshold then
+         Shade := Shade + 1;
       end if;
+
+      return Gade.Camera.Pixel_Value (Shade);
    end To_Pixel_Value;
 
    procedure Log_Permission_State (Provider_State : in out State) is
@@ -198,7 +209,7 @@ package body Runtime.Camera is
                     SDL.Video.Pixels.ARGB_8888_Access."+" (Row_Pointer, Source_X);
                begin
                   Provider_State.Last_Frame (Y, X) :=
-                    To_Pixel_Value (Pixel_Pointer.all);
+                    To_Pixel_Value (X, Y, Pixel_Pointer.all);
                end;
             end loop;
          end;
