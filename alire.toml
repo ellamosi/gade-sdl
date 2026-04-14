@@ -40,6 +40,9 @@ LIBRARY_PATH.prepend = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/
 sdl3ada = "*"
 
 [[depends-on]]
+sdl3ada_menu = "*"
+
+[[depends-on]]
 gade = "^0.1.0"
 # For local sibling development, pin temporarily:
 #   alr pin gade --use=../gade
@@ -51,3 +54,6 @@ gade = { path='../gade' }
 
 [[pins]]
 sdl3ada = { path='../sdl3ada' }
+
+[[pins]]
+sdl3ada_menu = { path='../sdl3ada_menu' }

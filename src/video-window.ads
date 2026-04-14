@@ -13,6 +13,20 @@ package Video.Window is
 
    procedure Shutdown (Window : in out Window_Instance);
 
+   function Get_Handle
+     (Window : aliased in out Window_Instance)
+      return not null access SDL.Video.Windows.Window;
+
+   procedure Set_Title
+     (Window : in out Window_Instance;
+      Title  : String);
+
+   procedure Set_Fullscreen
+     (Window  : in out Window_Instance;
+      Enabled : Boolean);
+
+   function Is_Fullscreen (Window : Window_Instance) return Boolean;
+
    generic
       with procedure Generate_Frame (Buffer : RGB32_Display_Buffer_Access);
    procedure Render_Frame (Window : in out Window_Instance);
@@ -28,7 +42,7 @@ package Video.Window is
 private
 
    type Window_Instance is new Limited_Controlled with record
-      Window            : SDL.Video.Windows.Window;
+      Window            : aliased SDL.Video.Windows.Window;
       Device            : SDL.GPU.Device;
       Upload_Buffer     : SDL.GPU.Transfer_Buffer;
       Source_Texture    : SDL.GPU.Texture;

@@ -523,6 +523,35 @@ package body Video.Window is
          raise;
    end Create;
 
+   function Get_Handle
+     (Window : aliased in out Window_Instance)
+      return not null access SDL.Video.Windows.Window
+   is
+   begin
+      return Window.Window'Access;
+   end Get_Handle;
+
+   procedure Set_Title
+     (Window : in out Window_Instance;
+      Title  : String) is
+   begin
+      Window.Window.Set_Title (Title);
+   end Set_Title;
+
+   procedure Set_Fullscreen
+     (Window  : in out Window_Instance;
+      Enabled : Boolean) is
+   begin
+      Window.Window.Set_Fullscreen (Enabled);
+   end Set_Fullscreen;
+
+   function Is_Fullscreen (Window : Window_Instance) return Boolean is
+   begin
+      return
+        (Window.Window.Get_Flags and SDL.Video.Windows.Full_Screen) /=
+        SDL.Video.Windows.Windowed;
+   end Is_Fullscreen;
+
    procedure Render_Frame (Window : in out Window_Instance) is
       use type RGB32_Display_Buffer_Conversions.Object_Pointer;
 

@@ -1,5 +1,6 @@
 with "gade";
 with "sdl3ada";
+with "sdl3ada_menu";
 
 project Gade_SDL is
 
@@ -11,6 +12,8 @@ project Gade_SDL is
    for Source_Dirs use ("src");
 
    SDL3_PLATFORM : SDL3Ada.Platform_Type := external ("SDL3ADA_PLATFORM");
+   SDL3_Menu_Build_Dir := external ("SDL3_MENU_BUILD_DIR", Gade_SDL'Project_Dir & "../SDL_menu/build");
+   MacOS_Framework_Dir := "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks";
    Mode : Mode_Type := external ("mode");
 
    package Naming renames Gade.Naming;
@@ -25,21 +28,31 @@ project Gade_SDL is
       case SDL3_PLATFORM is
          when "macosx" =>
             for Default_Switches ("ada") use
-              ("-Wl,-framework,SDL3",
+              ("-L" & SDL3_Menu_Build_Dir,
+               "-F" & MacOS_Framework_Dir,
+               "-Wl,-framework,SDL3",
+               "-Wl,-framework,Cocoa",
                "-lgnarl");
          when "macos_homebrew" =>
             for Default_Switches ("ada") use
-              ("-L/opt/homebrew/lib",
+              ("-L" & SDL3_Menu_Build_Dir,
+               "-F" & MacOS_Framework_Dir,
+               "-L/opt/homebrew/lib",
                "-lSDL3",
+               "-Wl,-framework,Cocoa",
                "-lgnarl");
          when "macos_ports" =>
             for Default_Switches ("ada") use
-              ("-L/opt/local/lib",
+              ("-L" & SDL3_Menu_Build_Dir,
+               "-F" & MacOS_Framework_Dir,
+               "-L/opt/local/lib",
                "-lSDL3",
+               "-Wl,-framework,Cocoa",
                "-lgnarl");
          when others =>
             for Default_Switches ("ada") use
-              ("-lSDL3",
+              ("-L" & SDL3_Menu_Build_Dir,
+               "-lSDL3",
                "-lgnarl");
       end case;
    end Linker;
